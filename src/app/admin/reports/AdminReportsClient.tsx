@@ -113,7 +113,7 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {initial.map((r) => {
-                  const s = r.stats as Record<string, number>;
+                  const s = r.stats;
                   const rate = s.total > 0 ? Math.round((s.resolved / s.total) * 100) : 0;
                   return (
                     <tr key={r.id} className="hover:bg-slate-50">
@@ -160,7 +160,7 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {initialYearly.map((r) => {
-                  const s = r.stats as Record<string, number>;
+                  const s = r.stats;
                   return (
                     <tr key={r.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 font-medium text-slate-900">{r.year}</td>
