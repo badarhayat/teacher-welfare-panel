@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Validate email domain
     if (!email.endsWith('@uet.edu.pk')) {
       return NextResponse.json(
-        { error: 'Email must be from UET domain (@uet.edu.pk)' },
+        { error: 'An Engineering University email address is required' },
         { status: 400 }
       );
     }

@@ -52,7 +52,7 @@ export default function RegisterPage() {
     setError('');
 
     if (!form.email.endsWith('@uet.edu.pk')) {
-      setError('Please use your UET email address (@uet.edu.pk).');
+      setError('Please use your Engineering University email address.');
       return;
     }
     if (!form.campus || !form.department) {
@@ -140,13 +140,13 @@ export default function RegisterPage() {
             <GraduationCap className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
-          <p className="text-blue-200 text-sm mt-1">Teacher Welfare Panel &mdash; UET Lahore Faculty Registration</p>
+          <p className="text-blue-200 text-sm mt-1">Teacher Welfare Panel &mdash; Engineering University Faculty Registration</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-5 text-sm">
-            <p className="font-medium mb-0.5">UET Faculty Only</p>
-            <p>Registration requires a UET email address (<strong>@uet.edu.pk</strong>). Your account will be reviewed by an administrator before access is granted.</p>
+            <p className="font-medium mb-0.5">Engineering University Faculty Only</p>
+            <p>Registration requires an Engineering University email address. Your account will be reviewed by an administrator before access is granted.</p>
           </div>
 
           {error && (
@@ -174,13 +174,13 @@ export default function RegisterPage() {
                 name="email"
                 label="University Email"
                 type="email"
-                placeholder="faculty@uet.edu.pk"
+                placeholder="faculty@university.edu"
                 value={form.email}
                 onChange={handleChange}
                 required
               />
               {form.email && !form.email.endsWith('@uet.edu.pk') && (
-                <p className="text-xs text-red-500 mt-1">Email must end with @uet.edu.pk</p>
+                <p className="text-xs text-red-500 mt-1">Please enter your Engineering University email address.</p>
               )}
             </div>
 
