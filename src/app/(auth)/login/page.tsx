@@ -60,7 +60,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] p-4 py-8">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -72,7 +72,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="rounded-2xl bg-white p-5 shadow-2xl sm:p-8">
           {pendingApproval && (
             <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-5 text-sm">
               <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -114,12 +114,13 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 pr-10 focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
+                  className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pr-11 text-base text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] sm:text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-0 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center text-slate-400 hover:text-slate-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

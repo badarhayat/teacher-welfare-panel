@@ -69,7 +69,7 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 sm:py-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Teacher Registrations</h1>
         <p className="text-slate-500 text-sm mt-1">Review and approve pending faculty registration requests.</p>
@@ -111,18 +111,18 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
                 key={reg.id}
                 className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden"
               >
-                <div className="px-6 py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                <div className="px-4 py-4 sm:px-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <User className="w-4 h-4 text-slate-400" />
                         <span className="font-semibold text-slate-900">{reg.full_name}</span>
                         <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
                           {reg.designation}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-600">{reg.email}</p>
-                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <p className="break-all text-sm text-slate-600">{reg.email}</p>
+                      <div className="flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:items-center sm:gap-4">
                         <span className="flex items-center gap-1">
                           <Building className="w-3 h-3" />
                           {reg.campus}
@@ -136,11 +136,11 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
                         Submitted {formatDate(reg.created_at)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-shrink-0">
                       <button
                         onClick={() => handleApprove(reg.id)}
                         disabled={loading === reg.id}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         {loading === reg.id ? 'Approving…' : 'Approve'}
@@ -151,7 +151,7 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
                           setRejectionInput('');
                         }}
                         disabled={loading === reg.id}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-700 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
+                        className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
                       >
                         <XCircle className="w-4 h-4" />
                         Reject
@@ -167,22 +167,22 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
                       </label>
                       <input
                         type="text"
-                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300"
+                        className="min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-red-300 sm:text-sm"
                         placeholder="e.g. Could not verify employment status"
                         value={rejectionInput}
                         onChange={(e) => setRejectionInput(e.target.value)}
                       />
-                      <div className="flex gap-2 mt-2">
+                      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                         <button
                           onClick={() => handleReject(reg.id)}
                           disabled={loading === reg.id}
-                          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+                          className="min-h-11 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                         >
                           {loading === reg.id ? 'Rejecting…' : 'Confirm Reject'}
                         </button>
                         <button
                           onClick={() => setRejectingId(null)}
-                          className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200"
+                          className="min-h-11 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
                         >
                           Cancel
                         </button>
@@ -202,7 +202,24 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
           <h2 className="text-lg font-semibold text-slate-800 mb-3">
             Approved Teachers ({approved.length})
           </h2>
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="space-y-3 lg:hidden">
+            {approved.map((reg) => (
+              <div key={reg.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900">{reg.full_name}</p>
+                    <p className="break-all text-sm text-slate-600">{reg.email}</p>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                </div>
+                <div className="mt-3 space-y-1 text-sm text-slate-600">
+                  <p className="break-words">{reg.department}</p>
+                  <p className="break-words text-xs text-slate-500">{reg.campus}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>

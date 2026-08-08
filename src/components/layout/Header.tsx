@@ -11,13 +11,13 @@ interface HeaderProps {
 
 export default function Header({ user, title, subtitle }: HeaderProps) {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-20">
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-        {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+    <header className="sticky top-14 z-20 flex min-h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:top-0">
+      <div className="min-w-0">
+        <h1 className="truncate text-base font-semibold text-slate-900 sm:text-lg">{title}</h1>
+        {subtitle && <p className="line-clamp-1 text-xs text-slate-500">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-3">
-        <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
+        <button className="relative inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-slate-100" aria-label="Notifications">
           <Bell className="w-5 h-5 text-slate-600" />
         </button>
         <div className="flex items-center gap-2">

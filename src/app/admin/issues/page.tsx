@@ -161,7 +161,7 @@ export default function AdminIssuesPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile} title="All Issues" subtitle="Manage and respond to faculty issues" />
-      <main className="flex-1 p-6 space-y-4">
+      <main className="flex-1 space-y-4 p-4 sm:p-6">
         {/* View mode tabs */}
         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1.5 w-fit shadow-sm">
           {viewTabs.map(({ key, label, icon }) => (
@@ -182,7 +182,7 @@ export default function AdminIssuesPage() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
             <div className="relative lg:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -228,7 +228,7 @@ export default function AdminIssuesPage() {
 
         {/* Table */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
               <h2 className="font-semibold text-slate-900">
                 {viewMode === 'active' ? 'Active Issues' : viewMode === 'archived' ? 'Archived Issues' : 'All Issues'}

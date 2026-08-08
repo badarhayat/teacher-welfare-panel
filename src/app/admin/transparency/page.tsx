@@ -106,7 +106,7 @@ export default function AdminTransparencyPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile} title="Transparency Controls" subtitle="Publish community resolutions and announcements" />
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 space-y-6 p-4 sm:p-6">
         <Card>
           <h2 className="text-lg font-semibold text-slate-900 mb-5">Create Community Update</h2>
 

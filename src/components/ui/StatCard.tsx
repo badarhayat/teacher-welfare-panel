@@ -21,11 +21,11 @@ const colorMap = {
 export default function StatCard({ title, value, icon: Icon, color = 'blue', description }: StatCardProps) {
   const colors = colorMap[color];
   return (
-    <div className={cn('rounded-xl border border-slate-200 p-5 bg-white shadow-sm', colors.bg)}>
+    <div className={cn('rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5', colors.bg)}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-slate-600 font-medium">{title}</p>
-          <p className={cn('text-3xl font-bold mt-1', colors.value)}>{value}</p>
+          <p className={cn('mt-1 text-2xl font-bold sm:text-3xl', colors.value)}>{value}</p>
           {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
         </div>
         <div className={cn('p-2.5 rounded-lg', colors.icon)}>

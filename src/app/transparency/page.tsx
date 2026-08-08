@@ -178,16 +178,16 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
   return (
     <div className="min-h-screen bg-slate-50">
       <section className="bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] text-white">
-        <div className="max-w-6xl mx-auto px-6 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
           <p className="text-xs uppercase tracking-[0.2em] text-blue-200 mb-3">Teacher Welfare Panel</p>
-          <h1 className="text-3xl md:text-4xl font-bold">Public Transparency Board</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">Public Transparency Board</h1>
           <p className="mt-3 text-blue-100 max-w-3xl text-sm md:text-base">
             Community visibility into resolved faculty welfare actions, announcements, and measurable progress.
           </p>
           {loggedInUser && (
             <Link
               href={loggedInProfile?.role === 'admin' ? '/admin' : '/dashboard'}
-              className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 border border-white/30 rounded-lg text-sm font-medium text-white transition-colors"
+              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/30 bg-white/15 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/25"
             >
               ← Back to {loggedInProfile?.role === 'admin' ? 'Admin Panel' : 'My Dashboard'}
             </Link>
@@ -195,7 +195,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
         </div>
       </section>
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <form className="grid grid-cols-1 md:grid-cols-4 gap-3" method="GET" action="/transparency">
             <div className="md:col-span-2 relative">
@@ -204,13 +204,13 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
                 name="q"
                 defaultValue={query}
                 placeholder="Search resolution title, summary, actions..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+                className="min-h-11 w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-base focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] sm:text-sm"
               />
             </div>
             <select
               name="category"
               defaultValue={category}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+              className="min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] sm:text-sm"
             >
               <option value="All">All Categories</option>
               {ISSUE_CATEGORIES.map((item) => (
@@ -221,7 +221,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
               <select
                 name="status"
                 defaultValue={status}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
+                className="min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] sm:text-sm"
               >
                 <option value="All">All Statuses</option>
                 {ISSUE_STATUSES.map((s) => (
@@ -230,7 +230,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
               </select>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-[#1e3a5f] text-white hover:bg-[#15304f]"
+                className="min-h-11 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white hover:bg-[#15304f]"
               >
                 Filter
               </button>
@@ -240,7 +240,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Community Welfare Progress</h2>
               <span className="text-xs text-slate-500">Showing public records only</span>
             </div>
@@ -252,7 +252,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
             ) : (
               <div className="space-y-4">
                 {pagedGroups.map((group) => (
-                  <article key={group.key} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                  <article key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-semibold text-slate-900 text-base">{group.complaintTheme}</h3>
@@ -299,18 +299,18 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
               <div className="flex items-center gap-2">
                 <Link
                   href={buildQuery(Math.max(page - 1, 1))}
-                  className={`px-3 py-1.5 text-sm rounded-lg border ${page <= 1 ? 'pointer-events-none opacity-50 border-slate-200 text-slate-400' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                  className={`inline-flex min-h-11 items-center rounded-lg border px-3 py-2 text-sm ${page <= 1 ? 'pointer-events-none opacity-50 border-slate-200 text-slate-400' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Previous
                 </Link>
                 <Link
                   href={buildQuery(Math.min(page + 1, totalPages))}
-                  className={`px-3 py-1.5 text-sm rounded-lg border ${page >= totalPages ? 'pointer-events-none opacity-50 border-slate-200 text-slate-400' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                  className={`inline-flex min-h-11 items-center rounded-lg border px-3 py-2 text-sm ${page >= totalPages ? 'pointer-events-none opacity-50 border-slate-200 text-slate-400' : 'border-slate-300 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Next
                 </Link>
@@ -462,7 +462,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
                     </div>
 
                     {/* Stats grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-4">
+                    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
                       {[
                         { label: 'Total',        value: total,       color: 'bg-blue-50  text-blue-700'  },
                         { label: 'Public',       value: publicCount, color: 'bg-indigo-50 text-indigo-700' },

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import Sidebar from '@/components/layout/Sidebar';
+import AppShell from '@/components/layout/AppShell';
 import { UserProfile } from '@/types';
 
 export default async function DashboardLayout({
@@ -27,11 +27,6 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar user={profile as UserProfile} />
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
-        {children}
-      </div>
-    </div>
+    <AppShell user={profile as UserProfile}>{children}</AppShell>
   );
 }

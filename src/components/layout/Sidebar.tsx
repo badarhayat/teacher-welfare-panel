@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -15,6 +16,7 @@ import {
   Megaphone,
   UserCheck,
   CalendarClock,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types';
@@ -23,6 +25,8 @@ import { useRouter } from 'next/navigation';
 
 interface SidebarProps {
   user: UserProfile;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 const teacherNav = [
@@ -41,12 +45,31 @@ const adminNav = [
   { href: '/admin/users', label: 'Faculty List', icon: Users },
 ];
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
 
   const navItems = user.role === 'admin' ? adminNav : teacherNav;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    onClose?.();
+  }, [pathname, onClose]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -54,9 +77,24 @@ export default function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="w-64 min-h-screen bg-[#0f2744] flex flex-col fixed left-0 top-0 z-30 shadow-xl">
+    <>
+      {open && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden"
+          onClick={onClose}
+          aria-label="Close navigation menu"
+        />
+      )}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 flex h-dvh w-64 flex-col overflow-y-auto bg-[#0f2744] shadow-xl transition-transform duration-200 lg:z-30 lg:translate-x-0',
+          open ? 'translate-x-0' : '-translate-x-full'
+        )}
+        aria-label="Main navigation"
+      >
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-white/10">
+      <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center">
             <GraduationCap className="w-5 h-5 text-white" />
@@ -66,6 +104,14 @@ export default function Sidebar({ user }: SidebarProps) {
             <p className="text-blue-300 text-xs">Panel</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-blue-200 hover:bg-white/10 hover:text-white lg:hidden"
+          aria-label="Close navigation menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* User info */}
@@ -96,7 +142,7 @@ export default function Sidebar({ user }: SidebarProps) {
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                'flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
                 active
                   ? 'bg-white/15 text-white'
                   : 'text-blue-200 hover:bg-white/8 hover:text-white'
@@ -114,7 +160,7 @@ export default function Sidebar({ user }: SidebarProps) {
             <Link
               href="/dashboard"
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                'flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
                 pathname === '/dashboard'
                   ? 'bg-white/15 text-white'
                   : 'text-blue-200 hover:bg-white/8 hover:text-white'
@@ -131,12 +177,13 @@ export default function Sidebar({ user }: SidebarProps) {
       <div className="px-3 py-4 border-t border-white/10">
         <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-200 hover:bg-white/8 hover:text-white transition-all duration-150"
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-blue-200 transition-all duration-150 hover:bg-white/8 hover:text-white"
         >
           <LogOut className="w-4 h-4" />
           Sign Out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -26,9 +26,9 @@ export default async function IssuesPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile as UserProfile} title="My Issues" subtitle="All your submitted issues" />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 sm:p-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
               <h2 className="font-semibold text-slate-900">All Issues</h2>
               <p className="text-sm text-slate-500">{issues?.length ?? 0} total</p>

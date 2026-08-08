@@ -57,7 +57,7 @@ export default async function AdminPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile as UserProfile} title="Admin Overview" subtitle="Teacher Welfare Panel" />
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 space-y-6 p-4 sm:p-6">
 
         {/* Pending approvals alert */}
         {pendingCount > 0 && (
@@ -76,7 +76,7 @@ export default async function AdminPage() {
         )}
 
         {/* Primary stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Total Issues"    value={totalIssues}  icon={FileText}      color="blue" />
           <StatCard title="Active Issues"   value={activeIssues} icon={Inbox}         color="orange" />
           <StatCard title="Resolved"        value={resolved}     icon={CheckCircle2}  color="green" />
@@ -84,7 +84,7 @@ export default async function AdminPage() {
         </div>
 
         {/* Status breakdown row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <StatCard title="Submitted"    value={submitted}    icon={TrendingUp}   color="blue" />
           <StatCard title="Under Review" value={underReview}  icon={Clock}        color="orange" />
           <StatCard title="In Progress"  value={inProgress}   icon={TrendingUp}   color="orange" />
@@ -113,7 +113,7 @@ export default async function AdminPage() {
 
         {/* Recent Issues table */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
               <h2 className="font-semibold text-slate-900">Recent Issues</h2>
               <p className="text-sm text-slate-500">Latest submissions across all departments</p>

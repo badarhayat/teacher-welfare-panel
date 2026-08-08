@@ -80,7 +80,7 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile} title="My Profile" subtitle="Manage your account details" />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-xl mx-auto space-y-5">
           {/* Profile info card */}
           <Card>

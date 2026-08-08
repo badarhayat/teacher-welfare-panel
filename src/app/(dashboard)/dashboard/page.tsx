@@ -78,7 +78,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         title="My Dashboard"
         subtitle={`Welcome back, ${profile.full_name}`}
       />
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 space-y-6 p-4 sm:p-6">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Issues" value={allIssuesForStats.length} icon={FileText} color="blue" />

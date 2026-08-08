@@ -21,13 +21,38 @@ export default async function AdminUsersPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile as UserProfile} title="Faculty Members" subtitle="Registered faculty on the platform" />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 sm:p-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
+          <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
             <h2 className="font-semibold text-slate-900">All Members</h2>
-            <p className="text-sm text-slate-500">{users?.length ?? 0} members · click "Make Admin" to promote a teacher</p>
+            <p className="text-sm text-slate-500">{users?.length ?? 0} members · click &quot;Make Admin&quot; to promote a teacher</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-3 lg:hidden">
+            {(users ?? []).map((u) => (
+              <div key={u.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1e3a5f] text-sm font-semibold uppercase text-white">
+                    {u.full_name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words font-medium text-slate-900">{u.full_name}</p>
+                    <p className="break-all text-xs text-slate-500">{u.email}</p>
+                  </div>
+                  <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    {Array.isArray(u.issues) ? u.issues.length : 0} issues
+                  </span>
+                </div>
+                <div className="mt-3 space-y-1 text-sm text-slate-600">
+                  <p className="break-words">{u.designation} · {u.department}</p>
+                  <p className="break-words text-xs text-slate-500">{u.campus} · Joined {formatDate(u.created_at)}</p>
+                </div>
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  <PromoteButton userId={u.id} initialRole={u.role} currentAdminId={user.id} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">

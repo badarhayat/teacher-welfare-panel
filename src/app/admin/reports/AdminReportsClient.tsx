@@ -45,7 +45,7 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
   }
 
   return (
-    <div className="flex-1 p-6 space-y-8 max-w-5xl mx-auto">
+    <div className="mx-auto w-full max-w-5xl flex-1 space-y-8 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
         <p className="text-slate-500 text-sm mt-1">Generate and view monthly and yearly progress reports.</p>
@@ -64,7 +64,7 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
         </div>
       )}
 
-      <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-[#1e3a5f]" />
           Generate Reports
@@ -99,7 +99,31 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
             No monthly reports yet. Click &quot;Generate&quot; above to create the first one.
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <>
+          <div className="space-y-3 lg:hidden">
+            {initial.map((r) => {
+              const stats = r.stats;
+              const rate = stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0;
+              return (
+                <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium text-slate-900">{getMonthName(r.month)} {r.year}</p>
+                    <Link href={`/transparency/reports/${r.year}/${r.month}`} className="inline-flex min-h-11 items-center text-sm font-medium text-[#1e3a5f]" target="_blank">View</Link>
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+                    <p><span className="block text-xs text-slate-500">Total</span>{stats.total ?? 0}</p>
+                    <p className="text-green-700"><span className="block text-xs text-slate-500">Resolved</span>{stats.resolved ?? 0} ({rate}%)</p>
+                    <p className="text-amber-700"><span className="block text-xs text-slate-500">Pending</span>{stats.pending ?? 0}</p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <span className="text-xs text-slate-500">Generated {formatDate(r.generated_at)}</span>
+                    <button onClick={() => generateReport('monthly', r.year, r.month)} disabled={generating} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50" title="Regenerate" aria-label={`Regenerate ${getMonthName(r.month)} ${r.year} report`}><RefreshCw className="h-4 w-4" /></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
@@ -135,6 +159,7 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 
@@ -146,7 +171,27 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
         {initialYearly.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500 text-sm">No yearly reports yet.</div>
         ) : (
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <>
+          <div className="space-y-3 lg:hidden">
+            {initialYearly.map((r) => (
+              <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-medium text-slate-900">{r.year} Year-to-Date</p>
+                  <Link href={`/transparency/reports/${r.year}`} className="inline-flex min-h-11 items-center text-sm font-medium text-[#1e3a5f]" target="_blank">View</Link>
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+                  <p><span className="block text-xs text-slate-500">Total</span>{r.stats.total ?? 0}</p>
+                  <p className="text-green-700"><span className="block text-xs text-slate-500">Resolved</span>{r.stats.resolved ?? 0}</p>
+                  <p className="text-purple-700"><span className="block text-xs text-slate-500">Rate</span>{r.stats.resolution_rate ?? 0}%</p>
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                  <span className="text-xs text-slate-500">Generated {formatDate(r.generated_at)}</span>
+                  <button onClick={() => generateReport('yearly', r.year)} disabled={generating} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50" title="Regenerate" aria-label={`Regenerate ${r.year} yearly report`}><RefreshCw className="h-4 w-4" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
@@ -178,6 +223,7 @@ export default function AdminReportsClient({ monthlyReports: initial, yearlyRepo
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
     </div>

@@ -157,7 +157,7 @@ export default function AdminIssueDetailPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile} title="Issue Detail" subtitle="Admin view" />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-3xl mx-auto space-y-5">
           <Link href="/admin/issues" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800">
             <ArrowLeft className="w-4 h-4" /> Back to Issues
@@ -171,7 +171,7 @@ export default function AdminIssueDetailPage() {
           )}
 
           {/* Issue Info */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex items-start justify-between gap-4 mb-3">
               <h2 className="text-xl font-bold text-slate-900">{issue.title}</h2>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -217,7 +217,7 @@ export default function AdminIssueDetailPage() {
           </div>
 
           {/* Status Update */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <h3 className="font-semibold text-slate-900 mb-4">Update Status</h3>
             <div className="flex items-end gap-3">
               <div className="flex-1">
@@ -240,7 +240,7 @@ export default function AdminIssueDetailPage() {
           </div>
 
           {/* Replies */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex items-center gap-2 mb-5">
               <MessageSquare className="w-4 h-4 text-slate-500" />
               <h3 className="font-semibold text-slate-900">
@@ -301,7 +301,7 @@ export default function AdminIssueDetailPage() {
             </form>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <h3 className="font-semibold text-slate-900 mb-4">Transparency Board Details</h3>
             <form onSubmit={handlePublishResolution} className="space-y-4">
               <Textarea

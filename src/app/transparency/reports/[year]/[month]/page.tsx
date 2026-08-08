@@ -37,22 +37,22 @@ export default async function MonthlyReportPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-slate-50">
       <section className="bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] text-white">
-        <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
           <p className="text-xs uppercase tracking-[0.2em] text-blue-200 mb-3">Teacher Welfare Panel · Monthly Report</p>
-          <h1 className="text-3xl md:text-4xl font-bold">{getMonthName(month)} {year}</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">{getMonthName(month)} {year}</h1>
           <p className="mt-3 text-blue-100 text-sm md:text-base">
             TSA Monthly Progress Report — auto-generated on {new Date(report.generated_at).toLocaleDateString('en-PK', { dateStyle: 'long' })}
           </p>
         </div>
       </section>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
         <Link href="/transparency" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800">
           <ArrowLeft className="w-4 h-4" /> Back to Transparency Board
         </Link>
 
         {/* Executive Summary */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <FileBarChart className="w-5 h-5 text-[#1e3a5f]" />
             <h2 className="text-lg font-bold text-slate-900">Executive Summary</h2>
@@ -73,7 +73,7 @@ export default async function MonthlyReportPage({ params }: Props) {
             <BarChart3 className="w-4 h-4 text-[#1e3a5f]" />
             Complaint Statistics
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { label: 'Total', value: s.total, icon: FileBarChart, color: 'blue' },
               { label: 'Public', value: s.public, icon: Users, color: 'purple' },
@@ -99,7 +99,7 @@ export default async function MonthlyReportPage({ params }: Props) {
         </div>
 
         {/* Resolution Rate Bar */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-base font-semibold text-slate-900 mb-3">Resolution Rate</h2>
           <div className="flex items-center gap-4">
             <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
@@ -115,7 +115,7 @@ export default async function MonthlyReportPage({ params }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Category Breakdown */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-base font-semibold text-slate-900 mb-4">Category Breakdown</h2>
             {categoryEntries.length === 0 ? (
               <p className="text-sm text-slate-500">No data.</p>
@@ -140,7 +140,7 @@ export default async function MonthlyReportPage({ params }: Props) {
           </div>
 
           {/* Priority Breakdown */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-base font-semibold text-slate-900 mb-4">Priority Breakdown</h2>
             {priorityEntries.length === 0 ? (
               <p className="text-sm text-slate-500">No data.</p>
@@ -172,9 +172,9 @@ export default async function MonthlyReportPage({ params }: Props) {
         </div>
 
         {/* Status Breakdown */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Status Distribution</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
             {[
               { label: 'Submitted', value: s.submitted, color: 'bg-blue-500' },
               { label: 'Under Review', value: s.under_review, color: 'bg-yellow-500' },
@@ -196,7 +196,7 @@ export default async function MonthlyReportPage({ params }: Props) {
         <div className="flex justify-center pb-8">
           <Link
             href="/transparency"
-            className="px-6 py-2.5 rounded-lg bg-[#1e3a5f] text-white text-sm font-medium hover:bg-[#15304f]"
+            className="inline-flex min-h-11 items-center rounded-lg bg-[#1e3a5f] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#15304f]"
           >
             ← Back to Transparency Board
           </Link>

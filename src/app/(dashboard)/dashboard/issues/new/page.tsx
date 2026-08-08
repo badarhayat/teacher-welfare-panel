@@ -108,7 +108,7 @@ export default function NewIssuePage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile} title="Submit Issue" subtitle="Raise a concern or suggestion" />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-2xl mx-auto">
           <Link
             href="/dashboard/issues"

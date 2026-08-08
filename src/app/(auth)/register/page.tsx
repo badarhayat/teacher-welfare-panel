@@ -133,7 +133,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] flex items-center justify-center p-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] p-4 py-8 sm:py-10">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/15 rounded-2xl mb-4">
@@ -143,7 +143,7 @@ export default function RegisterPage() {
           <p className="text-blue-200 text-sm mt-1">Teacher Welfare Panel &mdash; Engineering University Faculty Registration</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="rounded-2xl bg-white p-5 shadow-2xl sm:p-8">
           <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-5 text-sm">
             <p className="font-medium mb-0.5">Engineering University Faculty Only</p>
             <p>Registration requires an Engineering University email address. Your account will be reviewed by an administrator before access is granted.</p>

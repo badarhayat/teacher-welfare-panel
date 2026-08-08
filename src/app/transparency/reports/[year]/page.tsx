@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { formatDate, getMonthName } from '@/lib/utils';
-import { ArrowLeft, Calendar, TrendingUp, BarChart3, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp } from 'lucide-react';
 import type { YearlyReport } from '@/types';
 
 interface PageProps {
@@ -37,7 +37,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-slate-50">
       <section className="bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] text-white">
-        <div className="max-w-5xl mx-auto px-6 py-10">
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
           <Link
             href="/transparency"
             className="inline-flex items-center gap-1.5 text-blue-200 hover:text-white text-sm mb-6 transition-colors"
@@ -51,7 +51,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
             </div>
             <div>
               <p className="text-blue-200 text-sm font-medium mb-1">Annual Progress Report</p>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-2xl font-bold sm:text-3xl">
                 {year} Year-to-Date
               </h1>
               <p className="text-blue-100 text-sm mt-2">
@@ -67,9 +67,9 @@ export default async function YearlyReportPage({ params }: PageProps) {
         </div>
       </section>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
         {/* Executive Summary */}
-        <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">Executive Summary</h2>
           <p className="text-slate-600 text-sm leading-relaxed">
             In {isCurrentYear ? `the first ${currentMonth} month${currentMonth > 1 ? 's' : ''} of` : 'the year'} {year},
@@ -81,7 +81,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
         </section>
 
         {/* Stats Cards */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: 'Total Issues', value: stats.total, color: 'bg-blue-50 text-blue-700 border-blue-200' },
             { label: 'Resolved', value: stats.resolved, color: 'bg-green-50 text-green-700 border-green-200' },
@@ -100,7 +100,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
         </section>
 
         {/* Resolution Rate */}
-        <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">Overall Resolution Rate</h2>
           <div className="flex items-center gap-4">
             <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
@@ -122,7 +122,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Category Breakdown */}
           {stats.categories && Object.keys(stats.categories).length > 0 && (
-            <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Issues by Category</h2>
               <div className="space-y-3">
                 {Object.entries(stats.categories)
@@ -150,7 +150,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
 
           {/* Priority Breakdown */}
           {stats.priorities && Object.keys(stats.priorities).length > 0 && (
-            <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Issues by Priority</h2>
               <div className="space-y-3">
                 {(['Urgent', 'High', 'Medium', 'Low'] as const).map((pri) => {
@@ -175,7 +175,7 @@ export default async function YearlyReportPage({ params }: PageProps) {
         </div>
 
         {/* Monthly Breakdown */}
-        <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Monthly Progress</h2>
           <p className="text-sm text-slate-500 mb-4">
             Click any month to view the full monthly report.
