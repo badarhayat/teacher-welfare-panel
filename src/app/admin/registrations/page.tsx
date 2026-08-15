@@ -15,7 +15,7 @@ export default async function AdminRegistrationsPage() {
 
   if (!profile || profile.role !== 'admin') redirect('/dashboard');
 
-  // Pending = teachers who signed up but have not been approved yet
+  // Registered teachers (email verification is enough — no admin approval queue)
   const { data: registrations } = await supabase
     .from('profiles')
     .select('id, email, full_name, campus, department, designation, created_at, is_approved')

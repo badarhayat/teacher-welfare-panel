@@ -533,7 +533,9 @@ $$;
 grant execute on function public.acknowledge_issue_deletion(uuid) to authenticated;
 
 create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer as $$
+returns trigger language plpgsql security definer
+set search_path = public
+as $$
 declare
   is_uet boolean := lower(coalesce(new.email, '')) like '%@uet.edu.pk';
 begin
@@ -556,7 +558,9 @@ begin
     coalesce(new.raw_user_meta_data->>'role', 'teacher'),
     is_uet,
     case when is_uet then now() else null end
-  );
+  )
+  on conflict (id) do nothing;
+
   return new;
 end;
 $$;

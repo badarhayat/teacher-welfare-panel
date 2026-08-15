@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { GraduationCap, Eye, EyeOff, AlertCircle, Clock, Mail } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, AlertCircle, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -20,7 +20,6 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
-  const [pendingApproval, setPendingApproval] = useState(false);
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
   const [resending, setResending] = useState(false);
 
@@ -35,7 +34,6 @@ export default function LoginForm() {
     e.preventDefault();
     setError('');
     setInfo('');
-    setPendingApproval(false);
     setNeedsEmailConfirm(false);
     setLoading(true);
 
@@ -51,19 +49,14 @@ export default function LoginForm() {
       return;
     }
 
+    // Email confirmation is enough — no admin approval gate.
+    // Route by role when profile exists.
     if (data.user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('is_approved, role')
+        .select('role')
         .eq('id', data.user.id)
-        .single();
-
-      if (profile && !profile.is_approved && profile.role !== 'admin') {
-        await supabase.auth.signOut();
-        setPendingApproval(true);
-        setLoading(false);
-        return;
-      }
+        .maybeSingle();
 
       if (profile?.role === 'admin') {
         router.replace('/admin');
@@ -108,19 +101,6 @@ export default function LoginForm() {
         </div>
 
         <div className="rounded-2xl bg-white p-5 shadow-2xl sm:p-8">
-          {pendingApproval && (
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-5 text-sm">
-              <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Account Not Yet Active</p>
-                <p>
-                  Engineering University (@uet.edu.pk) accounts only need email verification.
-                  If you just registered, confirm the link in your inbox, then try again.
-                  Otherwise contact an administrator.
-                </p>
-              </div>
-            </div>
-          )}
           {needsEmailConfirm && (
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-5 text-sm">
               <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />

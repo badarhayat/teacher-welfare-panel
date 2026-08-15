@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header';
 import StatCard from '@/components/ui/StatCard';
 import IssueTable from '@/components/issues/IssueTable';
 import { UserProfile, IssueStatus } from '@/types';
-import { FileText, Users, Clock, CheckCircle2, AlertTriangle, TrendingUp, EyeOff, Inbox, UserCheck } from 'lucide-react';
+import { FileText, Users, Clock, CheckCircle2, AlertTriangle, TrendingUp, EyeOff, Inbox } from 'lucide-react';
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -16,7 +16,6 @@ export default async function AdminPage() {
     { data: allIssuesMeta },
     { data: recentIssues },
     { data: users },
-    { data: pendingRegistrations },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('issues').select('id, status, priority, is_anonymous').is('deleted_at', null),
@@ -27,7 +26,6 @@ export default async function AdminPage() {
       .order('created_at', { ascending: false })
       .limit(10),
     supabase.from('profiles').select('id').eq('role', 'teacher'),
-    supabase.from('teacher_registrations').select('id').eq('status', 'pending'),
   ]);
 
   if (!profile) redirect('/login');
@@ -47,7 +45,6 @@ export default async function AdminPage() {
   const resolved      = (statusCounts['Resolved'] ?? 0) + (statusCounts['Closed'] ?? 0);
   const anonymous     = meta.filter((i) => i.is_anonymous).length;
   const urgent        = meta.filter((i) => i.priority === 'Urgent' && !['Resolved', 'Closed'].includes(i.status)).length;
-  const pendingCount  = pendingRegistrations?.length ?? 0;
 
   const tableIssues = (recentIssues ?? []).map((issue) => ({
     ...issue,
@@ -58,22 +55,6 @@ export default async function AdminPage() {
     <div className="flex flex-col flex-1">
       <Header user={profile as UserProfile} title="Admin Overview" subtitle="Teacher Welfare Panel" />
       <main className="flex-1 space-y-6 p-4 sm:p-6">
-
-        {/* Pending approvals alert */}
-        {pendingCount > 0 && (
-          <a href="/admin/registrations" className="block">
-            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 hover:bg-amber-100 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <UserCheck className="w-5 h-5 text-amber-600" />
-                <div>
-                  <p className="font-semibold text-amber-800">{pendingCount} Pending Registration{pendingCount !== 1 ? 's' : ''}</p>
-                  <p className="text-xs text-amber-600 mt-0.5">Teacher accounts awaiting your approval before they can log in.</p>
-                </div>
-              </div>
-              <span className="text-sm font-medium text-amber-700 underline">Review →</span>
-            </div>
-          </a>
-        )}
 
         {/* Primary stats row */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
