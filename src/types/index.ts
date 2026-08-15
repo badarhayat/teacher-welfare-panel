@@ -174,3 +174,56 @@ export interface BlockedEmail {
   blocked_by?: string | null;
   created_at: string;
 }
+
+export type PromotionRank =
+  | 'Lecturer'
+  | 'Assistant Professor'
+  | 'Associate Professor'
+  | 'Professor';
+
+export interface PromotionVacancyEntry {
+  existing_vacant: number;
+  new_required: number;
+  new_required_reason?: string | null;
+}
+
+export type PromotionVacancies = Record<PromotionRank, PromotionVacancyEntry>;
+
+export interface PromotionSubmission {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  campus: string;
+  department: string;
+  designation: string;
+  date_of_joining: string;
+  cadre_start_date: string;
+  vacancies: PromotionVacancies;
+  created_at: string;
+}
+
+export interface PromotionVacancyAggregate {
+  campus: string;
+  department: string;
+  rank: PromotionRank;
+  existing_vacant: number;
+  new_required: number;
+  submission_count: number;
+  existing_used_median: boolean;
+  new_used_median: boolean;
+}
+
+export interface PromotionServiceRow {
+  user_id: string;
+  full_name: string;
+  email: string;
+  campus: string;
+  department: string;
+  designation: string;
+  date_of_joining: string;
+  cadre_start_date: string;
+  service_years: number;
+  cadre_years: number;
+  submitted_at: string;
+}

@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header';
 import StatCard from '@/components/ui/StatCard';
 import IssueCard from '@/components/issues/IssueCard';
 import Link from 'next/link';
-import { FileText, Clock, CheckCircle2, AlertTriangle, PlusCircle, Megaphone, Archive, Inbox } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertTriangle, PlusCircle, Megaphone, Archive, Inbox, TrendingUp } from 'lucide-react';
 import { CommunityUpdate, Issue, IssueStatus, UserProfile } from '@/types';
 import Button from '@/components/ui/Button';
 import { formatDate, ACTIVE_STATUSES, ARCHIVED_STATUSES } from '@/lib/utils';
@@ -129,12 +129,20 @@ export default async function DashboardPage({ searchParams }: Props) {
             </Link>
           </div>
           {!isArchive && (
-            <Link href="/dashboard/issues/new">
-              <Button size="sm" className="flex items-center gap-1.5">
-                <PlusCircle className="w-4 h-4" />
-                New Issue
-              </Button>
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/dashboard/promotion">
+                <Button size="sm" variant="outline" className="flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4" />
+                  Promotion Data
+                </Button>
+              </Link>
+              <Link href="/dashboard/issues/new">
+                <Button size="sm" className="flex items-center gap-1.5">
+                  <PlusCircle className="w-4 h-4" />
+                  New Issue
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
 

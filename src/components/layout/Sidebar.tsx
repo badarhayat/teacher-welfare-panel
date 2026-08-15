@@ -17,6 +17,7 @@ import {
   UserCheck,
   CalendarClock,
   Ban,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ const teacherNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/issues', label: 'My Issues', icon: FileText },
   { href: '/dashboard/issues/new', label: 'Submit Issue', icon: PlusCircle },
+  { href: '/dashboard/promotion', label: 'Promotion Data', icon: TrendingUp },
   { href: '/dashboard/profile', label: 'My Profile', icon: User },
 ];
 
@@ -44,6 +46,7 @@ const adminNav = [
   { href: '/admin/reports', label: 'Reports', icon: CalendarClock },
   { href: '/admin/transparency', label: 'Transparency', icon: Megaphone },
   { href: '/admin/users', label: 'Faculty List', icon: Users },
+  { href: '/admin/promotion', label: 'Promotion Data', icon: TrendingUp },
   { href: '/admin/blocked-emails', label: 'Blocked Emails', icon: Ban },
 ];
 

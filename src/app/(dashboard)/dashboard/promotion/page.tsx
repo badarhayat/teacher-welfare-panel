@@ -1,0 +1,306 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import Header from '@/components/layout/Header';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { formatDate } from '@/lib/utils';
+import {
+  emptyVacancies,
+  PROMOTION_RANKS,
+  yearsSince,
+} from '@/lib/promotion/aggregate';
+import type {
+  PromotionRank,
+  PromotionSubmission,
+  PromotionVacancies,
+  UserProfile,
+} from '@/types';
+
+export default function PromotionDataPage() {
+  const supabase = createClient();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [past, setPast] = useState<PromotionSubmission[]>([]);
+  const [dateOfJoining, setDateOfJoining] = useState('');
+  const [cadreStartDate, setCadreStartDate] = useState('');
+  const [vacancies, setVacancies] = useState<PromotionVacancies>(emptyVacancies());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const [{ data: prof }, { data: subs }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase
+          .from('promotion_submissions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+      ]);
+      if (prof) setProfile(prof as UserProfile);
+      setPast((subs ?? []) as PromotionSubmission[]);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const serviceYears = useMemo(() => yearsSince(dateOfJoining), [dateOfJoining]);
+  const cadreYears = useMemo(() => yearsSince(cadreStartDate), [cadreStartDate]);
+
+  function updateVacancy(
+    rank: PromotionRank,
+    field: 'existing_vacant' | 'new_required' | 'new_required_reason',
+    value: string
+  ) {
+    setVacancies((prev) => {
+      const next = { ...prev, [rank]: { ...prev[rank] } };
+      if (field === 'new_required_reason') {
+        next[rank].new_required_reason = value;
+      } else {
+        const n = Math.max(0, parseInt(value || '0', 10) || 0);
+        next[rank][field] = n;
+        if (field === 'new_required' && n === 0) {
+          next[rank].new_required_reason = '';
+        }
+      }
+      return next;
+    });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!profile) return;
+
+    if (!dateOfJoining || !cadreStartDate) {
+      setError('Please enter date of joining and date entered present cadre.');
+      return;
+    }
+    if (cadreStartDate < dateOfJoining) {
+      setError('Cadre start date cannot be before date of joining.');
+      return;
+    }
+
+    for (const rank of PROMOTION_RANKS) {
+      const entry = vacancies[rank];
+      if (entry.new_required > 0 && !entry.new_required_reason?.trim()) {
+        setError(`Please provide a reason for new ${rank} seats required.`);
+        return;
+      }
+    }
+
+    setLoading(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      setError('Not signed in.');
+      return;
+    }
+
+    const payload = {
+      user_id: user.id,
+      full_name: profile.full_name,
+      email: profile.email,
+      campus: profile.campus,
+      department: profile.department,
+      designation: profile.designation,
+      date_of_joining: dateOfJoining,
+      cadre_start_date: cadreStartDate,
+      vacancies,
+    };
+
+    const { data, error: insertError } = await supabase
+      .from('promotion_submissions')
+      .insert(payload)
+      .select('*')
+      .single();
+
+    if (insertError) {
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    setPast((prev) => [data as PromotionSubmission, ...prev]);
+    setSuccess('Promotion data submitted successfully.');
+    setLoading(false);
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1e3a5f] border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <Header
+        user={profile}
+        title="Promotion Data"
+        subtitle="Report vacant / required seats in your department"
+      />
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 p-4 sm:p-6">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Link>
+
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <div>
+            <h2 className="font-semibold text-slate-900">Your details (from profile)</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Update campus, department, or designation from My Profile if needed.
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
+              <div className="rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-xs text-slate-500">Name</p>
+                <p className="font-medium text-slate-800">{profile.full_name}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-xs text-slate-500">Email</p>
+                <p className="break-all font-medium text-slate-800">{profile.email}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-xs text-slate-500">Campus</p>
+                <p className="font-medium text-slate-800">{profile.campus}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-xs text-slate-500">Department</p>
+                <p className="font-medium text-slate-800">{profile.department}</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 px-3 py-2 sm:col-span-2">
+                <p className="text-xs text-slate-500">Present cadre</p>
+                <p className="font-medium text-slate-800">{profile.designation}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              id="date_of_joining"
+              label="Date of joining"
+              type="date"
+              value={dateOfJoining}
+              onChange={(e) => setDateOfJoining(e.target.value)}
+              required
+            />
+            <Input
+              id="cadre_start_date"
+              label="Date entered present cadre"
+              type="date"
+              value={cadreStartDate}
+              onChange={(e) => setCadreStartDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <span className="rounded-lg bg-blue-50 px-3 py-2 text-blue-800">
+              Total service: <strong>{serviceYears}</strong> year{serviceYears === 1 ? '' : 's'}
+            </span>
+            <span className="rounded-lg bg-blue-50 px-3 py-2 text-blue-800">
+              In present cadre: <strong>{cadreYears}</strong> year{cadreYears === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <h2 className="font-semibold text-slate-900">Vacant / required seats in your department</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Existing vacant = sanctioned but unfilled (no reason). New required seats need a reason.
+              </p>
+            </div>
+            {PROMOTION_RANKS.map((rank) => (
+              <div key={rank} className="rounded-lg border border-slate-200 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-slate-800">{rank}</h3>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Input
+                    id={`${rank}-existing`}
+                    label="Existing vacant seats"
+                    type="number"
+                    min={0}
+                    value={String(vacancies[rank].existing_vacant)}
+                    onChange={(e) => updateVacancy(rank, 'existing_vacant', e.target.value)}
+                  />
+                  <Input
+                    id={`${rank}-new`}
+                    label="New seats required"
+                    type="number"
+                    min={0}
+                    value={String(vacancies[rank].new_required)}
+                    onChange={(e) => updateVacancy(rank, 'new_required', e.target.value)}
+                  />
+                </div>
+                {vacancies[rank].new_required > 0 && (
+                  <div className="mt-3">
+                    <Input
+                      id={`${rank}-reason`}
+                      label="Reason for new seats"
+                      type="text"
+                      placeholder="Why are additional seats needed?"
+                      value={vacancies[rank].new_required_reason ?? ''}
+                      onChange={(e) => updateVacancy(rank, 'new_required_reason', e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <Button type="submit" loading={loading} className="w-full sm:w-auto">
+            Submit promotion data
+          </Button>
+        </form>
+
+        {past.length > 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+            <h2 className="mb-3 font-semibold text-slate-900">Your past submissions</h2>
+            <ul className="divide-y divide-slate-100">
+              {past.map((s) => (
+                <li key={s.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {s.campus} · {s.department}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Cadre: {s.designation} · Joined {s.date_of_joining} · Cadre since {s.cadre_start_date}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-400">{formatDate(s.created_at)}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
