@@ -107,7 +107,7 @@ export default function NewIssuePage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <Header user={profile} title="Submit Issue" subtitle="Raise a concern or suggestion" />
+      <Header user={profile} title="New Issue" subtitle="Raise a concern or suggestion" />
       <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-2xl mx-auto">
           <Link
@@ -192,9 +192,11 @@ export default function NewIssuePage() {
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" loading={loading} size="lg">
-                  Submit Issue
-                </Button>
+                {form.title.trim() && form.description.trim() ? (
+                  <Button type="submit" loading={loading} size="lg">
+                    Submit Issue
+                  </Button>
+                ) : null}
                 <Link href="/dashboard/issues">
                   <Button type="button" variant="secondary" size="lg">
                     Cancel

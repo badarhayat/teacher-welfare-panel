@@ -9,9 +9,10 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { formatDate } from '@/lib/utils';
 import {
+  durationSince,
   emptyVacancies,
+  formatDuration,
   PROMOTION_RANKS,
-  yearsSince,
 } from '@/lib/promotion/aggregate';
 import type {
   PromotionRank,
@@ -67,8 +68,14 @@ export default function PromotionDataPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const serviceYears = useMemo(() => yearsSince(dateOfJoining), [dateOfJoining]);
-  const cadreYears = useMemo(() => yearsSince(cadreStartDate), [cadreStartDate]);
+  const serviceLabel = useMemo(
+    () => formatDuration(durationSince(dateOfJoining)),
+    [dateOfJoining]
+  );
+  const cadreLabel = useMemo(
+    () => formatDuration(durationSince(cadreStartDate)),
+    [cadreStartDate]
+  );
 
   function resetForm() {
     setEditingId(null);
@@ -351,10 +358,10 @@ export default function PromotionDataPage() {
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
             <span className="rounded-lg bg-blue-50 px-3 py-2 text-blue-800">
-              Total service: <strong>{serviceYears}</strong> year{serviceYears === 1 ? '' : 's'}
+              Total service: <strong>{serviceLabel}</strong>
             </span>
             <span className="rounded-lg bg-blue-50 px-3 py-2 text-blue-800">
-              In present cadre: <strong>{cadreYears}</strong> year{cadreYears === 1 ? '' : 's'}
+              In present cadre: <strong>{cadreLabel}</strong>
             </span>
           </div>
 

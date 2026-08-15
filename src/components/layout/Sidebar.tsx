@@ -34,7 +34,7 @@ interface SidebarProps {
 const teacherNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/issues', label: 'My Issues', icon: FileText },
-  { href: '/dashboard/issues/new', label: 'Submit Issue', icon: PlusCircle },
+  { href: '/dashboard/issues/new', label: 'New Issue', icon: PlusCircle },
   { href: '/dashboard/promotion', label: 'Promotion Data', icon: TrendingUp },
   { href: '/dashboard/profile', label: 'My Profile', icon: User },
 ];

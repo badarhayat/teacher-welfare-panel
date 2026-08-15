@@ -21,13 +21,49 @@ export function emptyVacancies(): PromotionVacancies {
 
 /** Whole years between a date (YYYY-MM-DD) and today (or asOf). */
 export function yearsSince(dateStr: string, asOf: Date = new Date()): number {
-  if (!dateStr) return 0;
+  return durationSince(dateStr, asOf).years;
+}
+
+export type TenureDuration = { years: number; months: number; days: number };
+
+/** Calendar years, months, and days from a start date (YYYY-MM-DD) to asOf. */
+export function durationSince(dateStr: string, asOf: Date = new Date()): TenureDuration {
+  if (!dateStr) return { years: 0, months: 0, days: 0 };
   const start = new Date(dateStr);
-  if (Number.isNaN(start.getTime())) return 0;
-  let years = asOf.getFullYear() - start.getFullYear();
-  const m = asOf.getMonth() - start.getMonth();
-  if (m < 0 || (m === 0 && asOf.getDate() < start.getDate())) years -= 1;
-  return Math.max(0, years);
+  if (Number.isNaN(start.getTime())) return { years: 0, months: 0, days: 0 };
+
+  const end = new Date(asOf.getFullYear(), asOf.getMonth(), asOf.getDate());
+  const begin = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  if (end < begin) return { years: 0, months: 0, days: 0 };
+
+  let years = end.getFullYear() - begin.getFullYear();
+  let months = end.getMonth() - begin.getMonth();
+  let days = end.getDate() - begin.getDate();
+
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  return { years: Math.max(0, years), months: Math.max(0, months), days: Math.max(0, days) };
+}
+
+function unitLabel(value: number, singular: string, plural: string): string {
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
+/** e.g. "3 years, 4 months, 12 days"; all-zero → "0 days". */
+export function formatDuration(d: TenureDuration): string {
+  const parts: string[] = [];
+  if (d.years > 0) parts.push(unitLabel(d.years, 'year', 'years'));
+  if (d.months > 0) parts.push(unitLabel(d.months, 'month', 'months'));
+  if (d.days > 0 || parts.length === 0) parts.push(unitLabel(d.days, 'day', 'days'));
+  return parts.join(', ');
 }
 
 function modeOrMedian(values: number[]): { value: number; usedMedian: boolean } {
@@ -135,8 +171,8 @@ export function latestServiceRows(
 
   return [...latest.values()]
     .map((sub) => {
-      const service_years = yearsSince(sub.date_of_joining);
-      const cadre_years = yearsSince(sub.cadre_start_date);
+      const serviceDuration = durationSince(sub.date_of_joining);
+      const cadreDuration = durationSince(sub.cadre_start_date);
       return {
         user_id: sub.user_id,
         full_name: sub.full_name,
@@ -146,8 +182,10 @@ export function latestServiceRows(
         designation: sub.designation,
         date_of_joining: sub.date_of_joining,
         cadre_start_date: sub.cadre_start_date,
-        service_years,
-        cadre_years,
+        service_years: serviceDuration.years,
+        cadre_years: cadreDuration.years,
+        service_label: formatDuration(serviceDuration),
+        cadre_label: formatDuration(cadreDuration),
         submitted_at: sub.created_at,
       };
     })

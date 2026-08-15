@@ -160,12 +160,9 @@ export default async function DashboardPage({ searchParams }: Props) {
               <>
                 <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                 <h3 className="font-medium text-slate-700 mb-1">No active issues</h3>
-                <p className="text-sm text-slate-500 mb-5">
-                  Submit your first issue, suggestion, or question to the welfare committee.
+                <p className="text-sm text-slate-500">
+                  Use New Issue above to submit your first issue, suggestion, or question to the welfare committee.
                 </p>
-                <Link href="/dashboard/issues/new">
-                  <Button>Submit an Issue</Button>
-                </Link>
               </>
             )}
           </div>

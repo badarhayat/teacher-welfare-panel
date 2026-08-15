@@ -225,5 +225,7 @@ export interface PromotionServiceRow {
   cadre_start_date: string;
   service_years: number;
   cadre_years: number;
+  service_label: string;
+  cadre_label: string;
   submitted_at: string;
 }

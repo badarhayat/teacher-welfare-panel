@@ -128,7 +128,7 @@ export default function AdminPromotionPage() {
     lines.push('');
     lines.push('Faculty detail');
     lines.push(
-      'Name,Email,Campus,Department,Present cadre,Service years,Cadre years,Joined,Cadre start,Submitted'
+      'Name,Email,Campus,Department,Present cadre,Service,Cadre,Joined,Cadre start,Submitted'
     );
     for (const r of serviceRows) {
       lines.push(
@@ -138,8 +138,8 @@ export default function AdminPromotionPage() {
           csv(r.campus),
           csv(r.department),
           csv(r.designation),
-          r.service_years,
-          r.cadre_years,
+          csv(r.service_label),
+          csv(r.cadre_label),
           r.date_of_joining,
           r.cadre_start_date,
           r.submitted_at,
@@ -344,8 +344,8 @@ export default function AdminPromotionPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Name</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Department</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Cadre</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Service yrs</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Cadre yrs</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Service</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">Cadre time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -357,8 +357,8 @@ export default function AdminPromotionPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-700">{r.department}</td>
                       <td className="px-4 py-3 text-slate-700">{r.designation}</td>
-                      <td className="px-4 py-3 font-medium">{r.service_years}</td>
-                      <td className="px-4 py-3">{r.cadre_years}</td>
+                      <td className="px-4 py-3 font-medium">{r.service_label}</td>
+                      <td className="px-4 py-3">{r.cadre_label}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -373,7 +373,7 @@ export default function AdminPromotionPage() {
                   {r.campus} · {r.department} · {r.designation}
                 </p>
                 <p className="mt-1 text-slate-700">
-                  Service {r.service_years} yrs · Cadre {r.cadre_years} yrs
+                  Service {r.service_label} · Cadre {r.cadre_label}
                 </p>
               </div>
             ))}
