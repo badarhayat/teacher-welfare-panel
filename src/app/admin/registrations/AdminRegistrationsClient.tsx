@@ -51,19 +51,33 @@ export default function AdminRegistrationsClient({ initialRegistrations }: Props
   async function handleReject(id: string) {
     setLoading(id);
     setMessage(null);
-    // Deleting the profile blocks login; the auth.users entry is cleaned up by cascade when the
-    // admin removes the user from Supabase Auth or via a separate admin action.
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
-    if (error) {
-      setMessage({ type: 'error', text: error.message || 'Failed to reject' });
-    } else {
-      setRegistrations((prev) => prev.filter((r) => r.id !== id));
-      setMessage({ type: 'success', text: 'Registration rejected and removed.' });
-      setRejectingId(null);
-      setRejectionInput('');
+    const target = registrations.find((r) => r.id === id);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: id,
+          blockEmail: true,
+          reason: rejectionInput.trim() || 'Registration rejected by administrator',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data.error || 'Failed to reject' });
+      } else {
+        setRegistrations((prev) => prev.filter((r) => r.id !== id));
+        setMessage({
+          type: 'success',
+          text: target
+            ? `Rejected and removed ${target.email}. Email blocked from re-registering.`
+            : 'Registration rejected, removed, and email blocked.',
+        });
+        setRejectingId(null);
+        setRejectionInput('');
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to reject' });
     }
     setLoading(null);
   }

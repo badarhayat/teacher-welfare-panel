@@ -162,3 +162,11 @@ export interface TeacherRegistration {
   approved_by?: string | null;
   approved_at?: string | null;
 }
+
+export interface BlockedEmail {
+  id: string;
+  email: string;
+  reason?: string | null;
+  blocked_by?: string | null;
+  created_at: string;
+}

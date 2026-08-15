@@ -16,6 +16,7 @@ import {
   Megaphone,
   UserCheck,
   CalendarClock,
+  Ban,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ const adminNav = [
   { href: '/admin/reports', label: 'Reports', icon: CalendarClock },
   { href: '/admin/transparency', label: 'Transparency', icon: Megaphone },
   { href: '/admin/users', label: 'Faculty List', icon: Users },
+  { href: '/admin/blocked-emails', label: 'Blocked Emails', icon: Ban },
 ];
 
 export default function Sidebar({ user, open = false, onClose }: SidebarProps) {

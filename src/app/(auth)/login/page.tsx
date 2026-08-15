@@ -77,8 +77,12 @@ export default function LoginPage() {
             <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-5 text-sm">
               <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium">Account Pending Approval</p>
-                <p>Your registration is awaiting admin review. You will be able to login once approved.</p>
+                <p className="font-medium">Account Not Yet Active</p>
+                <p>
+                  Engineering University (@uet.edu.pk) accounts only need email verification.
+                  If you just registered, confirm the link in your inbox, then try again.
+                  Otherwise contact an administrator.
+                </p>
               </div>
             </div>
           )}

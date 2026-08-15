@@ -5,6 +5,7 @@ import { UserProfile } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { User } from 'lucide-react';
 import PromoteButton from './PromoteButton';
+import DeleteMemberButton from './DeleteMemberButton';
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export default async function AdminUsersPage() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
             <h2 className="font-semibold text-slate-900">All Members</h2>
-            <p className="text-sm text-slate-500">{users?.length ?? 0} members · click &quot;Make Admin&quot; to promote a teacher</p>
+            <p className="text-sm text-slate-500">{users?.length ?? 0} members · promote, or remove departed faculty</p>
           </div>
           <div className="space-y-3 p-3 lg:hidden">
             {(users ?? []).map((u) => (
@@ -46,8 +47,14 @@ export default async function AdminUsersPage() {
                   <p className="break-words">{u.designation} · {u.department}</p>
                   <p className="break-words text-xs text-slate-500">{u.campus} · Joined {formatDate(u.created_at)}</p>
                 </div>
-                <div className="mt-3 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
                   <PromoteButton userId={u.id} initialRole={u.role} currentAdminId={user.id} />
+                  <DeleteMemberButton
+                    userId={u.id}
+                    userName={u.full_name}
+                    userEmail={u.email}
+                    currentAdminId={user.id}
+                  />
                 </div>
               </div>
             ))}
@@ -63,6 +70,7 @@ export default async function AdminUsersPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Issues</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -92,6 +100,14 @@ export default async function AdminUsersPage() {
                       <PromoteButton
                         userId={u.id}
                         initialRole={u.role}
+                        currentAdminId={user.id}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <DeleteMemberButton
+                        userId={u.id}
+                        userName={u.full_name}
+                        userEmail={u.email}
                         currentAdminId={user.id}
                       />
                     </td>

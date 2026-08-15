@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GraduationCap, AlertCircle, Clock } from 'lucide-react';
+import { GraduationCap, AlertCircle, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -33,7 +33,7 @@ export default function RegisterPage() {
     designation: string;
   } | null>(null);
   const [error, setError] = useState('');
-  const [pending, setPending] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const [loading, setLoading] = useState(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -70,12 +70,27 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    // signUp creates the auth user; handle_new_user trigger creates the profile
-    // with is_approved = false so the user is blocked until an admin approves.
+    const { data: isBlocked, error: blockCheckError } = await supabase.rpc('is_email_blocked', {
+      p_email: form.email,
+    });
+    if (blockCheckError) {
+      setError('Unable to verify email eligibility. Please try again.');
+      setLoading(false);
+      return;
+    }
+    if (isBlocked) {
+      setError('This email address is not allowed to register. Contact the administrator if you believe this is a mistake.');
+      setLoading(false);
+      return;
+    }
+
+    // signUp creates the auth user; handle_new_user auto-approves @uet.edu.pk
+    // profiles. Access still requires email verification via Supabase.
     const { error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/login`,
         data: {
           full_name: form.full_name,
           campus: form.campus,
@@ -99,20 +114,21 @@ export default function RegisterPage() {
       department: form.department,
       designation: form.designation,
     });
-    setPending(true);
+    setRegistered(true);
     setLoading(false);
   }
 
-  if (pending && registrationData) {
+  if (registered && registrationData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-8 h-8 text-amber-600" />
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-8 h-8 text-blue-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Registration Submitted!</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Check Your Email</h2>
           <p className="text-slate-600 text-sm mb-4">
-            Your registration is pending admin approval. You will be able to log in once approved.
+            We sent a verification link to <span className="font-medium text-slate-800">{registrationData.email}</span>.
+            Verify your email, then sign in — no admin approval is required for Engineering University accounts.
           </p>
           <div className="bg-slate-50 rounded-lg p-4 text-left text-sm text-slate-600 mb-6 space-y-1">
             <p><span className="font-medium">Name:</span> {registrationData.full_name}</p>
@@ -122,7 +138,7 @@ export default function RegisterPage() {
             <p><span className="font-medium">Designation:</span> {registrationData.designation}</p>
           </div>
           <p className="text-xs text-slate-500 mb-6">
-            The university administrator will review your application and verify your faculty status before granting access.
+            If you do not see the email, check your spam folder. The link expires after a limited time.
           </p>
           <Button onClick={() => router.push('/login')} className="w-full">
             Back to Sign In
@@ -146,7 +162,7 @@ export default function RegisterPage() {
         <div className="rounded-2xl bg-white p-5 shadow-2xl sm:p-8">
           <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-5 text-sm">
             <p className="font-medium mb-0.5">Engineering University Faculty Only</p>
-            <p>Registration requires an Engineering University email address. Your account will be reviewed by an administrator before access is granted.</p>
+            <p>Use your @uet.edu.pk email. After you verify that address, you can sign in — admin approval is not required.</p>
           </div>
 
           {error && (
