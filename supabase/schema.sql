@@ -94,6 +94,9 @@ create table if not exists public.issues (
   published_to_board boolean not null default false,
   resolution_date timestamptz,
   deleted_at  timestamptz,
+  deleted_by  uuid references public.profiles(id) on delete set null,
+  deleted_by_role text check (deleted_by_role is null or deleted_by_role in ('teacher', 'admin')),
+  deletion_noticed_at timestamptz,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -116,6 +119,15 @@ alter table public.issues
 
 alter table public.issues
   add column if not exists deleted_at timestamptz;
+
+alter table public.issues
+  add column if not exists deleted_by uuid references public.profiles(id) on delete set null;
+
+alter table public.issues
+  add column if not exists deleted_by_role text check (deleted_by_role is null or deleted_by_role in ('teacher', 'admin'));
+
+alter table public.issues
+  add column if not exists deletion_noticed_at timestamptz;
 
 alter table public.issues
   alter column published_to_board set default true;
@@ -500,6 +512,25 @@ as $$
 $$;
 
 grant execute on function public.is_email_blocked(text) to anon, authenticated;
+
+create or replace function public.acknowledge_issue_deletion(p_issue_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.issues
+  set deletion_noticed_at = now()
+  where id = p_issue_id
+    and user_id = auth.uid()
+    and deleted_at is not null
+    and deleted_by_role = 'admin'
+    and deletion_noticed_at is null;
+end;
+$$;
+
+grant execute on function public.acknowledge_issue_deletion(uuid) to authenticated;
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$

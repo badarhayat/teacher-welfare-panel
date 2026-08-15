@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import { CAMPUSES, DEPARTMENTS, ISSUE_STATUSES, ISSUE_CATEGORIES, ISSUE_PRIORITIES, ACTIVE_STATUSES, ARCHIVED_STATUSES } from '@/lib/utils';
 import { Issue, UserProfile } from '@/types';
 import { Download, Search, Inbox, Archive, List } from 'lucide-react';
+import UnresolvedDocsButtons from '@/components/admin/UnresolvedDocsButtons';
 
 type ViewMode = 'active' | 'archived' | 'all';
 
@@ -49,6 +50,7 @@ export default function AdminIssuesPage() {
     let query = supabase
       .from('issues')
       .select('*, user:profiles!issues_user_id_fkey(*), replies(*)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     // Apply view-mode pre-filter at the server level
@@ -240,10 +242,13 @@ export default function AdminIssuesPage() {
                 <p className="text-xs text-slate-500 mt-0.5">Archived issues are kept permanently and never deleted.</p>
               )}
             </div>
-            <Button size="sm" variant="outline" onClick={exportPDF} className="flex items-center gap-1.5">
-              <Download className="w-4 h-4" />
-              Export PDF
-            </Button>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <UnresolvedDocsButtons />
+              <Button size="sm" variant="outline" onClick={exportPDF} className="flex items-center gap-1.5">
+                <Download className="w-4 h-4" />
+                Export PDF
+              </Button>
+            </div>
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-16">

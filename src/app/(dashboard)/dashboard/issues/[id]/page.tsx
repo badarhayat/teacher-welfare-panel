@@ -32,7 +32,8 @@ export default async function IssueDetailPage({ params }: PageProps) {
   if (!profile) redirect('/login');
   if (!issue) notFound();
 
-  const canEdit = issue.user_id === user.id;
+  const isAdminDeleted = Boolean(issue.deleted_at && issue.deleted_by_role === 'admin');
+  const canEdit = issue.user_id === user.id && !issue.deleted_at;
 
   return (
     <div className="flex flex-col flex-1">
@@ -46,6 +47,16 @@ export default async function IssueDetailPage({ params }: PageProps) {
             <ArrowLeft className="w-4 h-4" />
             Back to Issues
           </Link>
+
+          {isAdminDeleted && (
+            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-medium">This issue was removed by an administrator</p>
+              <p className="mt-1 text-amber-800">
+                It is no longer visible on your active issues list or the transparency board
+                {issue.deleted_at ? ` (removed ${formatDate(issue.deleted_at)})` : ''}.
+              </p>
+            </div>
+          )}
 
           {/* Issue card */}
           <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -124,7 +135,7 @@ export default async function IssueDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            <TeacherReplyForm issueId={issue.id} />
+            {!issue.deleted_at && <TeacherReplyForm issueId={issue.id} />}
           </div>
         </div>
       </main>

@@ -141,13 +141,17 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    // Soft delete: set deleted_at timestamp
-    const { data: deletedIssue, error: deleteError } = await supabase
+    // Soft delete: remove from board and record who deleted
+    const { error: deleteError } = await supabase
       .from('issues')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+      .update({
+        deleted_at: new Date().toISOString(),
+        deleted_by: user.id,
+        deleted_by_role: isAdmin ? 'admin' : 'teacher',
+        published_to_board: false,
+        deletion_noticed_at: isAdmin ? null : new Date().toISOString(),
+      })
+      .eq('id', id);
 
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 400 });

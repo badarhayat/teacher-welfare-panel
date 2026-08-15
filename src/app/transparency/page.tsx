@@ -51,6 +51,7 @@ export default async function TransparencyPage({ searchParams }: TransparencyPag
     .select('id, title, category, status, resolution_summary, actions_taken, resolution_date, created_at, updated_at, timeline:issue_status_history(id, issue_id, status, note, changed_at)', { count: 'exact' })
     .eq('published_to_board', true)
     .eq('is_anonymous', false)
+    .is('deleted_at', null)
     .order('updated_at', { ascending: false });
 
   if (query) {

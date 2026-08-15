@@ -66,6 +66,10 @@ export interface Issue {
   actions_taken?: string | null;
   published_to_board?: boolean;
   resolution_date?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  deleted_by_role?: 'teacher' | 'admin' | null;
+  deletion_noticed_at?: string | null;
   created_at: string;
   updated_at: string;
   user?: UserProfile;

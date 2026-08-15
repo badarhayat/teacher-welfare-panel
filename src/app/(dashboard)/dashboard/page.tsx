@@ -8,6 +8,7 @@ import { FileText, Clock, CheckCircle2, AlertTriangle, PlusCircle, Megaphone, Ar
 import { CommunityUpdate, Issue, IssueStatus, UserProfile } from '@/types';
 import Button from '@/components/ui/Button';
 import { formatDate, ACTIVE_STATUSES, ARCHIVED_STATUSES } from '@/lib/utils';
+import AdminDeletionNotices from '@/components/issues/AdminDeletionNotices';
 
 interface Props {
   searchParams: Promise<{ tab?: string }>;
@@ -22,18 +23,20 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: activeIssues }, { data: archivedIssues }, { data: resolved }, { data: updates }] = await Promise.all([
+  const [{ data: profile }, { data: activeIssues }, { data: archivedIssues }, { data: resolved }, { data: updates }, { data: deletionNotices }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('issues')
       .select('*, replies(*)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .in('status', ACTIVE_STATUSES)
       .order('created_at', { ascending: false }),
     supabase
       .from('issues')
       .select('*, replies(*)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .in('status', ARCHIVED_STATUSES)
       .order('updated_at', { ascending: false }),
     supabase
@@ -42,6 +45,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       .eq('published_to_board', true)
       .eq('is_anonymous', false)
       .eq('is_confidential', false)
+      .is('deleted_at', null)
       .in('status', ['Resolved', 'Closed'])
       .order('resolution_date', { ascending: false })
       .limit(3),
@@ -51,6 +55,14 @@ export default async function DashboardPage({ searchParams }: Props) {
       .eq('is_published', true)
       .order('published_at', { ascending: false })
       .limit(3),
+    supabase
+      .from('issues')
+      .select('id, title, deleted_at, category')
+      .eq('user_id', user.id)
+      .not('deleted_at', 'is', null)
+      .eq('deleted_by_role', 'admin')
+      .is('deletion_noticed_at', null)
+      .order('deleted_at', { ascending: false }),
   ]);
 
   if (!profile) redirect('/login');
@@ -79,6 +91,8 @@ export default async function DashboardPage({ searchParams }: Props) {
         subtitle={`Welcome back, ${profile.full_name}`}
       />
       <main className="flex-1 space-y-6 p-4 sm:p-6">
+        <AdminDeletionNotices initialNotices={deletionNotices ?? []} />
+
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Issues" value={allIssuesForStats.length} icon={FileText} color="blue" />

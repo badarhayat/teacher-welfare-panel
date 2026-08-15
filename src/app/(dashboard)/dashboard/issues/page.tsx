@@ -6,19 +6,29 @@ import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import { UserProfile } from '@/types';
 import Button from '@/components/ui/Button';
+import AdminDeletionNotices from '@/components/issues/AdminDeletionNotices';
 
 export default async function IssuesPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: issues }] = await Promise.all([
+  const [{ data: profile }, { data: issues }, { data: deletionNotices }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('issues')
       .select('*, replies(*)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('issues')
+      .select('id, title, deleted_at, category')
+      .eq('user_id', user.id)
+      .not('deleted_at', 'is', null)
+      .eq('deleted_by_role', 'admin')
+      .is('deletion_noticed_at', null)
+      .order('deleted_at', { ascending: false }),
   ]);
 
   if (!profile) redirect('/login');
@@ -26,7 +36,8 @@ export default async function IssuesPage() {
   return (
     <div className="flex flex-col flex-1">
       <Header user={profile as UserProfile} title="My Issues" subtitle="All your submitted issues" />
-      <main className="flex-1 p-4 sm:p-6">
+      <main className="flex-1 space-y-4 p-4 sm:p-6">
+        <AdminDeletionNotices initialNotices={deletionNotices ?? []} />
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
