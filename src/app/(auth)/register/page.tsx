@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { CAMPUSES_DEPARTMENTS, DESIGNATIONS } from '@/lib/utils';
+import { getEmailRedirectTo } from '@/lib/auth/emailRedirect';
 
 const CAMPUS_KEYS = Object.keys(CAMPUSES_DEPARTMENTS) as string[];
 
@@ -35,6 +36,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [registered, setRegistered] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
@@ -90,7 +93,7 @@ export default function RegisterPage() {
       email: form.email,
       password: form.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: getEmailRedirectTo(),
         data: {
           full_name: form.full_name,
           campus: form.campus,
@@ -118,6 +121,24 @@ export default function RegisterPage() {
     setLoading(false);
   }
 
+  async function handleResendConfirmation() {
+    if (!registrationData?.email) return;
+    setResending(true);
+    setResendMessage('');
+    setError('');
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email: registrationData.email,
+      options: { emailRedirectTo: getEmailRedirectTo() },
+    });
+    if (resendError) {
+      setError(resendError.message);
+    } else {
+      setResendMessage('Confirmation email sent again. Check your inbox and spam folder.');
+    }
+    setResending(false);
+  }
+
   if (registered && registrationData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f2744] via-[#1e3a5f] to-[#2a4f7c] flex items-center justify-center p-4">
@@ -137,12 +158,34 @@ export default function RegisterPage() {
             <p><span className="font-medium">Department:</span> {registrationData.department}</p>
             <p><span className="font-medium">Designation:</span> {registrationData.designation}</p>
           </div>
-          <p className="text-xs text-slate-500 mb-6">
+          <p className="text-xs text-slate-500 mb-4">
             If you do not see the email, check your spam folder. The link expires after a limited time.
           </p>
-          <Button onClick={() => router.push('/login')} className="w-full">
-            Back to Sign In
-          </Button>
+          {error && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-left text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+          {resendMessage && (
+            <p className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+              {resendMessage}
+            </p>
+          )}
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResendConfirmation}
+              loading={resending}
+              className="w-full"
+            >
+              Resend confirmation email
+            </Button>
+            <Button onClick={() => router.push('/login')} className="w-full">
+              Back to Sign In
+            </Button>
+          </div>
         </div>
       </div>
     );

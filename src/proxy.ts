@@ -30,7 +30,12 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublicRoute = pathname === '/' || pathname === '/login' || pathname === '/register';
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/transparency');
   const isAuthRoute = pathname === '/login' || pathname === '/register';
   const isDashboardRoute = pathname.startsWith('/dashboard');
   const isAdminRoute = pathname.startsWith('/admin');
