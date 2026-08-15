@@ -5,7 +5,7 @@ export type Campus =
   | 'KSK Campus'
   | 'Faisalabad Campus'
   | 'Narowal Campus'
-  | 'Gujranwala Campus'
+  | 'RCET Gujranwala'
   | string; // backward compat for pre-UET campus names
 
 export type Designation =

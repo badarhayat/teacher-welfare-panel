@@ -68,15 +68,6 @@ export const ARCHIVED_STATUSES: IssueStatus[] = ['Resolved', 'Closed'];
 
 export const ISSUE_PRIORITIES: IssuePriority[] = ['Low', 'Medium', 'High', 'Urgent'];
 
-// UET Lahore campuses
-export const CAMPUSES = [
-  'Main Campus',
-  'KSK Campus',
-  'Faisalabad Campus',
-  'Narowal Campus',
-  'Gujranwala Campus',
-] as const;
-
 // Faculty designations at UET Lahore
 export const DESIGNATIONS = [
   'Lecturer',
@@ -151,6 +142,9 @@ export const CAMPUSES_DEPARTMENTS: Record<string, readonly string[]> = {
     'Natural Sciences & Humanities',
   ],
 };
+
+// Derived from department map so registration and admin filters never drift
+export const CAMPUSES = Object.keys(CAMPUSES_DEPARTMENTS);
 
 // Flat list of all departments (for filter dropdowns and backward compat)
 export const DEPARTMENTS: string[] = Object.values(CAMPUSES_DEPARTMENTS).flat();
