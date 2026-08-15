@@ -12,9 +12,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(
+  /\/$/,
+  ''
+);
+
+const siteTitle = 'Teacher Welfare Panel';
+const siteDescription =
+  'Faculty welfare and issue resolution platform for the engineering university community';
+
 export const metadata: Metadata = {
-  title: 'Teacher Welfare Panel',
-  description: 'Faculty welfare and issue resolution platform for engineering university community',
+  metadataBase: new URL(siteUrl),
+  title: siteTitle,
+  description: siteDescription,
+  openGraph: {
+    title: siteTitle,
+    description: siteDescription,
+    siteName: siteTitle,
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteTitle,
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({
