@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
@@ -20,14 +20,30 @@ import type {
   UserProfile,
 } from '@/types';
 
+function normalizeVacancies(raw: PromotionVacancies | null | undefined): PromotionVacancies {
+  const base = emptyVacancies();
+  for (const rank of PROMOTION_RANKS) {
+    const entry = raw?.[rank];
+    base[rank] = {
+      existing_vacant: Math.max(0, Number(entry?.existing_vacant) || 0),
+      new_required: Math.max(0, Number(entry?.new_required) || 0),
+      new_required_reason: entry?.new_required_reason ?? '',
+    };
+  }
+  return base;
+}
+
 export default function PromotionDataPage() {
   const supabase = createClient();
+  const formRef = useRef<HTMLFormElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [past, setPast] = useState<PromotionSubmission[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [dateOfJoining, setDateOfJoining] = useState('');
   const [cadreStartDate, setCadreStartDate] = useState('');
   const [vacancies, setVacancies] = useState<PromotionVacancies>(emptyVacancies());
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -53,6 +69,25 @@ export default function PromotionDataPage() {
 
   const serviceYears = useMemo(() => yearsSince(dateOfJoining), [dateOfJoining]);
   const cadreYears = useMemo(() => yearsSince(cadreStartDate), [cadreStartDate]);
+
+  function resetForm() {
+    setEditingId(null);
+    setDateOfJoining('');
+    setCadreStartDate('');
+    setVacancies(emptyVacancies());
+  }
+
+  function startEdit(submission: PromotionSubmission) {
+    setError('');
+    setSuccess('');
+    setEditingId(submission.id);
+    setDateOfJoining(submission.date_of_joining);
+    setCadreStartDate(submission.cadre_start_date);
+    setVacancies(normalizeVacancies(submission.vacancies));
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
 
   function updateVacancy(
     rank: PromotionRank,
@@ -119,6 +154,39 @@ export default function PromotionDataPage() {
       vacancies,
     };
 
+    if (editingId) {
+      const { data, error: updateError } = await supabase
+        .from('promotion_submissions')
+        .update({
+          full_name: payload.full_name,
+          email: payload.email,
+          campus: payload.campus,
+          department: payload.department,
+          designation: payload.designation,
+          date_of_joining: payload.date_of_joining,
+          cadre_start_date: payload.cadre_start_date,
+          vacancies: payload.vacancies,
+        })
+        .eq('id', editingId)
+        .eq('user_id', user.id)
+        .select('*')
+        .single();
+
+      if (updateError) {
+        setError(updateError.message);
+        setLoading(false);
+        return;
+      }
+
+      setPast((prev) =>
+        prev.map((s) => (s.id === editingId ? (data as PromotionSubmission) : s))
+      );
+      setSuccess('Promotion data updated. Admin dashboard will show the revised figures.');
+      resetForm();
+      setLoading(false);
+      return;
+    }
+
     const { data, error: insertError } = await supabase
       .from('promotion_submissions')
       .insert(payload)
@@ -133,7 +201,48 @@ export default function PromotionDataPage() {
 
     setPast((prev) => [data as PromotionSubmission, ...prev]);
     setSuccess('Promotion data submitted successfully.');
+    resetForm();
     setLoading(false);
+  }
+
+  async function handleDelete(id: string) {
+    if (
+      !window.confirm(
+        'Delete this promotion submission? It will be removed from the admin dashboard and aggregates.'
+      )
+    ) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+    setDeletingId(id);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setDeletingId(null);
+      setError('Not signed in.');
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from('promotion_submissions')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      setError(deleteError.message);
+      setDeletingId(null);
+      return;
+    }
+
+    setPast((prev) => prev.filter((s) => s.id !== id));
+    if (editingId === id) resetForm();
+    setSuccess('Submission deleted. Admin dashboard and aggregates will no longer include it.');
+    setDeletingId(null);
   }
 
   if (!profile) {
@@ -173,12 +282,31 @@ export default function PromotionDataPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-slate-900">
+                {editingId ? 'Edit submission' : 'New submission'}
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                {editingId
+                  ? 'Save changes to update this report in the admin dashboard.'
+                  : 'Update campus, department, or designation from My Profile if needed.'}
+              </p>
+            </div>
+            {editingId && (
+              <Button type="button" variant="secondary" size="sm" onClick={resetForm}>
+                Cancel edit
+              </Button>
+            )}
+          </div>
+
           <div>
-            <h2 className="font-semibold text-slate-900">Your details (from profile)</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Update campus, department, or designation from My Profile if needed.
-            </p>
+            <h3 className="text-sm font-semibold text-slate-800">Your details (from profile)</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
               <div className="rounded-lg bg-slate-50 px-3 py-2">
                 <p className="text-xs text-slate-500">Name</p>
@@ -275,26 +403,58 @@ export default function PromotionDataPage() {
             ))}
           </div>
 
-          <Button type="submit" loading={loading} className="w-full sm:w-auto">
-            Submit promotion data
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" loading={loading} className="w-full sm:w-auto">
+              {editingId ? 'Save changes' : 'Submit promotion data'}
+            </Button>
+          </div>
         </form>
 
         {past.length > 0 && (
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-            <h2 className="mb-3 font-semibold text-slate-900">Your past submissions</h2>
+            <h2 className="mb-3 font-semibold text-slate-900">Your submissions</h2>
             <ul className="divide-y divide-slate-100">
               {past.map((s) => (
-                <li key={s.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={s.id}
+                  className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <p className="font-medium text-slate-800">
                       {s.campus} · {s.department}
+                      {editingId === s.id && (
+                        <span className="ml-2 text-xs font-normal text-[#1e3a5f]">(editing)</span>
+                      )}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Cadre: {s.designation} · Joined {s.date_of_joining} · Cadre since {s.cadre_start_date}
+                      Cadre: {s.designation} · Joined {s.date_of_joining} · Cadre since{' '}
+                      {s.cadre_start_date}
                     </p>
+                    <p className="mt-0.5 text-xs text-slate-400">{formatDate(s.created_at)}</p>
                   </div>
-                  <p className="text-xs text-slate-400">{formatDate(s.created_at)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => startEdit(s)}
+                      disabled={loading || deletingId === s.id}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      loading={deletingId === s.id}
+                      onClick={() => handleDelete(s.id)}
+                      disabled={loading}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>

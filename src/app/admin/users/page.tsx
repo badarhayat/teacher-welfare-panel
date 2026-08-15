@@ -16,7 +16,10 @@ export default async function AdminUsersPage() {
 
   const [{ data: profile }, { data: users, error: usersError }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('profiles').select('*, issues(id)').order('full_name'),
+    supabase
+      .from('profiles')
+      .select('*, issues!issues_user_id_fkey(id)')
+      .order('full_name'),
   ]);
 
   if (!profile) redirect('/login');
