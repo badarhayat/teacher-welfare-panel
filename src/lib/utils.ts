@@ -125,6 +125,7 @@ export const CAMPUSES_DEPARTMENTS: Record<string, readonly string[]> = {
     'Chemical, Polymer & Composite Materials Engineering',
     'Computer Science',
     'Electrical, Electronics & Telecommunication Engineering',
+    'Mechatronics & Control Engineering',
   ],
   'Narowal Campus': [
     'Basic Sciences & Humanities',
