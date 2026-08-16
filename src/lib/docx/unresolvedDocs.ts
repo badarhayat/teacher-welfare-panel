@@ -11,7 +11,11 @@ import type { Issue } from '@/types';
 export type UnresolvedDocIssue = Pick<
   Issue,
   'id' | 'title' | 'description' | 'category' | 'priority' | 'status' | 'created_at'
->;
+> & {
+  /** Optional Gemini rewrite (General Secretary / TSA voice). */
+  formalTitle?: string;
+  formalParagraphs?: string[];
+};
 
 const TSA_FROM = 'General Secretary, Teaching Staff Association (TSA), UET Lahore';
 
@@ -36,8 +40,12 @@ function cleanText(text: string | null | undefined): string {
   return (text ?? '').replace(/\s+/g, ' ').trim();
 }
 
-/** Formal paragraphs for VC / agenda: title + description, no submitter fields. */
+/** Formal paragraphs for VC / agenda: prefers Gemini rewrite, else title + description. */
 export function formatAgendaItemParagraphs(issue: UnresolvedDocIssue): string[] {
+  if (issue.formalParagraphs && issue.formalParagraphs.length > 0) {
+    return issue.formalParagraphs.map(cleanText).filter(Boolean);
+  }
+
   const title = cleanText(issue.title);
   const description = cleanText(issue.description);
 
@@ -51,15 +59,16 @@ export function formatAgendaItemParagraphs(issue: UnresolvedDocIssue): string[] 
     ];
   }
 
-  // Avoid repeating the title if description starts the same way
-  const detail = description.toLowerCase().startsWith(title.toLowerCase())
-    ? description
-    : description;
+  const detail = description;
 
   return [
     opening,
     `Particulars: ${detail}${/[.!?]$/.test(detail) ? '' : '.'}`,
   ];
+}
+
+function displayTitle(issue: UnresolvedDocIssue): string {
+  return cleanText(issue.formalTitle) || cleanText(issue.title) || 'Faculty welfare matter';
 }
 
 function signOffParagraphs(): Paragraph[] {
@@ -111,7 +120,7 @@ function buildItemBlocks(
           spacing: { before: 200, after: 60 },
           children: [
             new TextRun({
-              text: `${idx + 1}. ${cleanText(issue.title) || 'Faculty welfare matter'}`,
+              text: `${idx + 1}. ${displayTitle(issue)}`,
               bold: true,
               size: 22,
             }),
@@ -161,7 +170,7 @@ function buildItemBlocks(
           spacing: { before: 120, after: 60 },
           children: [
             new TextRun({
-              text: `${sectionNo}.${idx + 1}  ${cleanText(issue.title) || 'Faculty welfare matter'}`,
+              text: `${sectionNo}.${idx + 1}  ${displayTitle(issue)}`,
               bold: true,
               size: 22,
             }),
