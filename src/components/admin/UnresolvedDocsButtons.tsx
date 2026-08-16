@@ -19,7 +19,7 @@ export default function UnresolvedDocsButtons() {
   async function loadUnresolved(): Promise<UnresolvedDocIssue[]> {
     const { data, error: fetchError } = await supabase
       .from('issues')
-      .select('id, title, category, priority, status, created_at, is_anonymous, user:profiles!issues_user_id_fkey(campus, department, full_name)')
+      .select('id, title, description, category, priority, status, created_at')
       .is('deleted_at', null)
       .in('status', ACTIVE_STATUSES)
       .order('priority', { ascending: true })
@@ -27,10 +27,7 @@ export default function UnresolvedDocsButtons() {
 
     if (fetchError) throw new Error(fetchError.message);
 
-    return ((data ?? []) as unknown as UnresolvedDocIssue[]).map((issue) => ({
-      ...issue,
-      user: issue.is_anonymous ? null : issue.user,
-    }));
+    return (data ?? []) as UnresolvedDocIssue[];
   }
 
   async function handleVc() {

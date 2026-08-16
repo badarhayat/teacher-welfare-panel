@@ -4,34 +4,16 @@ import {
   Paragraph,
   TextRun,
   HeadingLevel,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  BorderStyle,
   AlignmentType,
 } from 'docx';
 import type { Issue } from '@/types';
 
 export type UnresolvedDocIssue = Pick<
   Issue,
-  'id' | 'title' | 'category' | 'priority' | 'status' | 'created_at'
-> & {
-  user?: {
-    campus?: string;
-    department?: string;
-    full_name?: string;
-  } | null;
-  is_anonymous?: boolean;
-};
+  'id' | 'title' | 'description' | 'category' | 'priority' | 'status' | 'created_at'
+>;
 
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-PK', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+const TSA_FROM = 'General Secretary, Teaching Staff Association (TSA), UET Lahore';
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-PK', {
@@ -50,71 +32,180 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function thinBorder() {
-  return {
-    top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-    bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-    left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-    right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-  };
+function cleanText(text: string | null | undefined): string {
+  return (text ?? '').replace(/\s+/g, ' ').trim();
 }
 
-function headerCell(text: string, width: number) {
-  return new TableCell({
-    width: { size: width, type: WidthType.DXA },
-    borders: thinBorder(),
-    children: [
+/** Formal paragraphs for VC / agenda: title + description, no submitter fields. */
+export function formatAgendaItemParagraphs(issue: UnresolvedDocIssue): string[] {
+  const title = cleanText(issue.title);
+  const description = cleanText(issue.description);
+
+  const opening = title
+    ? `Matter for consideration: ${title}${/[.!?]$/.test(title) ? '' : '.'}`
+    : 'Matter for consideration regarding faculty welfare.';
+
+  if (!description) {
+    return [
+      `${opening} The Teaching Staff Association requests kind attention and appropriate directions for early resolution of this faculty welfare concern.`,
+    ];
+  }
+
+  // Avoid repeating the title if description starts the same way
+  const detail = description.toLowerCase().startsWith(title.toLowerCase())
+    ? description
+    : description;
+
+  return [
+    opening,
+    `Particulars: ${detail}${/[.!?]$/.test(detail) ? '' : '.'}`,
+  ];
+}
+
+function signOffParagraphs(): Paragraph[] {
+  return [
+    new Paragraph({
+      spacing: { before: 300 },
+      children: [new TextRun({ text: 'With regards,' })],
+    }),
+    new Paragraph({
+      spacing: { before: 200 },
+      children: [new TextRun({ text: '____________________________' })],
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'General Secretary', bold: true })],
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'Teaching Staff Association (TSA)', bold: true })],
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'UET Lahore', italics: true })],
+    }),
+  ];
+}
+
+function buildItemBlocks(
+  issues: UnresolvedDocIssue[],
+  options: { groupByCategory: boolean }
+): Paragraph[] {
+  const blocks: Paragraph[] = [];
+
+  if (issues.length === 0) {
+    blocks.push(
       new Paragraph({
-        children: [new TextRun({ text, bold: true, size: 18 })],
-      }),
-    ],
-  });
-}
-
-function bodyCell(text: string, width: number) {
-  return new TableCell({
-    width: { size: width, type: WidthType.DXA },
-    borders: thinBorder(),
-    children: [
-      new Paragraph({
-        children: [new TextRun({ text, size: 18 })],
-      }),
-    ],
-  });
-}
-
-function issuesTable(issues: UnresolvedDocIssue[]) {
-  const widths = [600, 2200, 1400, 1200, 1200, 1100, 1100];
-  return new Table({
-    width: { size: 8800, type: WidthType.DXA },
-    rows: [
-      new TableRow({
         children: [
-          headerCell('#', widths[0]),
-          headerCell('Title', widths[1]),
-          headerCell('Category', widths[2]),
-          headerCell('Campus', widths[3]),
-          headerCell('Priority', widths[4]),
-          headerCell('Status', widths[5]),
-          headerCell('Submitted', widths[6]),
+          new TextRun({
+            text: 'There are presently no unresolved faculty welfare matters on the agenda.',
+            italics: true,
+          }),
         ],
-      }),
-      ...issues.map((issue, idx) => {
-        const campus = issue.is_anonymous ? '—' : (issue.user?.campus ?? '—');
-        return new TableRow({
+      })
+    );
+    return blocks;
+  }
+
+  if (!options.groupByCategory) {
+    issues.forEach((issue, idx) => {
+      blocks.push(
+        new Paragraph({
+          spacing: { before: 200, after: 60 },
           children: [
-            bodyCell(String(idx + 1), widths[0]),
-            bodyCell(issue.title, widths[1]),
-            bodyCell(issue.category, widths[2]),
-            bodyCell(campus, widths[3]),
-            bodyCell(issue.priority, widths[4]),
-            bodyCell(issue.status, widths[5]),
-            bodyCell(formatShortDate(issue.created_at), widths[6]),
+            new TextRun({
+              text: `${idx + 1}. ${cleanText(issue.title) || 'Faculty welfare matter'}`,
+              bold: true,
+              size: 22,
+            }),
           ],
-        });
-      }),
-    ],
-  });
+        }),
+        new Paragraph({
+          spacing: { after: 40 },
+          children: [
+            new TextRun({
+              text: `Category: ${issue.category || 'Other'}  |  Priority: ${issue.priority}`,
+              size: 18,
+              color: '444444',
+            }),
+          ],
+        }),
+        ...formatAgendaItemParagraphs(issue).map(
+          (text) =>
+            new Paragraph({
+              spacing: { after: 80 },
+              children: [new TextRun({ text, size: 20 })],
+            })
+        )
+      );
+    });
+    return blocks;
+  }
+
+  const byCategory = new Map<string, UnresolvedDocIssue[]>();
+  for (const issue of issues) {
+    const key = issue.category || 'Other';
+    const list = byCategory.get(key) ?? [];
+    list.push(issue);
+    byCategory.set(key, list);
+  }
+
+  let sectionNo = 1;
+  for (const [category, items] of byCategory) {
+    blocks.push(
+      new Paragraph({
+        spacing: { before: 280, after: 100 },
+        children: [new TextRun({ text: `${sectionNo}. ${category}`, bold: true, size: 24 })],
+      })
+    );
+    items.forEach((issue, idx) => {
+      blocks.push(
+        new Paragraph({
+          spacing: { before: 120, after: 60 },
+          children: [
+            new TextRun({
+              text: `${sectionNo}.${idx + 1}  ${cleanText(issue.title) || 'Faculty welfare matter'}`,
+              bold: true,
+              size: 22,
+            }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 40 },
+          children: [
+            new TextRun({
+              text: `Priority: ${issue.priority}`,
+              size: 18,
+              color: '444444',
+            }),
+          ],
+        }),
+        ...formatAgendaItemParagraphs(issue).map(
+          (text) =>
+            new Paragraph({
+              spacing: { after: 80 },
+              children: [new TextRun({ text, size: 20 })],
+            })
+        )
+      );
+    });
+    sectionNo += 1;
+  }
+
+  blocks.push(
+    new Paragraph({
+      spacing: { before: 300 },
+      children: [new TextRun({ text: `${sectionNo}. Any other business`, bold: true, size: 24 })],
+    }),
+    new Paragraph({
+      spacing: { after: 80 },
+      children: [
+        new TextRun({
+          text: 'Any additional faculty welfare matters that may arise with the permission of the chair.',
+          size: 20,
+        }),
+      ],
+    })
+  );
+
+  return blocks;
 }
 
 export async function downloadVcEmailDoc(issues: UnresolvedDocIssue[]) {
@@ -126,16 +217,31 @@ export async function downloadVcEmailDoc(issues: UnresolvedDocIssue[]) {
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: 'Teacher Welfare Panel / TSA', bold: true })],
+            children: [
+              new TextRun({ text: 'Teaching Staff Association (TSA)', bold: true }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: 'UET Lahore', bold: true })],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { after: 200 },
-            children: [new TextRun({ text: 'Brief for the Worthy Vice Chancellor', italics: true })],
+            children: [
+              new TextRun({
+                text: 'Brief for the Worthy Vice Chancellor',
+                italics: true,
+              }),
+            ],
           }),
           new Paragraph({
-            spacing: { after: 200 },
+            spacing: { after: 120 },
             children: [new TextRun({ text: `Date: ${date}` })],
+          }),
+          new Paragraph({
+            spacing: { after: 120 },
+            children: [new TextRun({ text: `From: ${TSA_FROM}` })],
           }),
           new Paragraph({
             spacing: { after: 200 },
@@ -146,45 +252,21 @@ export async function downloadVcEmailDoc(issues: UnresolvedDocIssue[]) {
             children: [
               new TextRun({
                 text:
-                  `Respectfully submitted for kind consideration: a summary of ${issues.length} unresolved faculty welfare issue(s) currently pending with the Teacher Welfare / TSA mechanism as of ${date}. These matters remain open (not Resolved or Closed) and are listed below for administrative review and guidance.`,
+                  `Respectfully submitted for kind consideration by the General Secretary, Teaching Staff Association (TSA), UET Lahore: a summary of ${issues.length} unresolved faculty welfare matter(s) as of ${date}. Individual faculty identities are not disclosed. The substance of each matter is set out below so that appropriate directions may be issued on the basis of this brief alone.`,
               }),
             ],
           }),
-          ...(issues.length === 0
-            ? [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'There are presently no unresolved issues on record.',
-                      italics: true,
-                    }),
-                  ],
-                }),
-              ]
-            : [issuesTable(issues)]),
+          ...buildItemBlocks(issues, { groupByCategory: false }),
           new Paragraph({
             spacing: { before: 300, after: 200 },
             children: [
               new TextRun({
                 text:
-                  'It is requested that the above issues may kindly be considered for appropriate directions / resolution through the concerned offices. The Teacher Welfare Committee remains available for any further clarification or briefing.',
+                  'It is requested that the above matters may kindly be considered for appropriate directions / resolution through the concerned offices. The Teaching Staff Association remains available for any further clarification or briefing.',
               }),
             ],
           }),
-          new Paragraph({
-            spacing: { before: 300 },
-            children: [new TextRun({ text: 'With regards,' })],
-          }),
-          new Paragraph({
-            spacing: { before: 200 },
-            children: [new TextRun({ text: '____________________________' })],
-          }),
-          new Paragraph({
-            children: [new TextRun({ text: 'Administrator / TSA', bold: true })],
-          }),
-          new Paragraph({
-            children: [new TextRun({ text: 'Teacher Welfare Panel', italics: true })],
-          }),
+          ...signOffParagraphs(),
         ],
       },
     ],
@@ -197,66 +279,6 @@ export async function downloadVcEmailDoc(issues: UnresolvedDocIssue[]) {
 
 export async function downloadMeetingAgendaDoc(issues: UnresolvedDocIssue[]) {
   const date = todayLabel();
-  const byCategory = new Map<string, UnresolvedDocIssue[]>();
-  for (const issue of issues) {
-    const key = issue.category || 'Other';
-    const list = byCategory.get(key) ?? [];
-    list.push(issue);
-    byCategory.set(key, list);
-  }
-
-  const agendaBlocks: Paragraph[] = [];
-  let itemNo = 1;
-  for (const [category, items] of byCategory) {
-    agendaBlocks.push(
-      new Paragraph({
-        spacing: { before: 240, after: 80 },
-        children: [new TextRun({ text: `${itemNo}. ${category}`, bold: true, size: 24 })],
-      })
-    );
-    items.forEach((issue, idx) => {
-      const campus = issue.is_anonymous ? '—' : (issue.user?.campus ?? '—');
-      const dept = issue.is_anonymous ? '—' : (issue.user?.department ?? '—');
-      agendaBlocks.push(
-        new Paragraph({
-          spacing: { after: 60 },
-          children: [
-            new TextRun({
-              text: `   ${itemNo}.${idx + 1}  ${issue.title}`,
-              bold: true,
-            }),
-          ],
-        }),
-        new Paragraph({
-          spacing: { after: 120 },
-          children: [
-            new TextRun({
-              text: `        Campus: ${campus} | Department: ${dept} | Priority: ${issue.priority} | Status: ${issue.status} | Submitted: ${formatShortDate(issue.created_at)}`,
-              size: 18,
-              color: '555555',
-            }),
-          ],
-        })
-      );
-    });
-    itemNo += 1;
-  }
-
-  if (issues.length === 0) {
-    agendaBlocks.push(
-      new Paragraph({
-        children: [new TextRun({ text: 'No unresolved issues to discuss.', italics: true })],
-      })
-    );
-  }
-
-  agendaBlocks.push(
-    new Paragraph({
-      spacing: { before: 300 },
-      children: [new TextRun({ text: `${itemNo}. Any other business`, bold: true, size: 24 })],
-    })
-  );
-
   const doc = new Document({
     sections: [
       {
@@ -264,22 +286,40 @@ export async function downloadMeetingAgendaDoc(issues: UnresolvedDocIssue[]) {
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: 'Agenda — Faculty Welfare Issues Meeting', bold: true })],
+            children: [
+              new TextRun({ text: 'Agenda — Faculty Welfare Issues Meeting', bold: true }),
+            ],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 120 },
-            children: [new TextRun({ text: 'Teacher Welfare Panel / TSA' })],
+            children: [
+              new TextRun({ text: 'Teaching Staff Association (TSA), UET Lahore', bold: true }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+            children: [
+              new TextRun({
+                text: 'Prepared for the Worthy Vice Chancellor',
+                italics: true,
+              }),
+            ],
+          }),
+          new Paragraph({
+            spacing: { after: 80 },
+            children: [new TextRun({ text: `Meeting / document date: ${date}` })],
           }),
           new Paragraph({
             spacing: { after: 200 },
             children: [
               new TextRun({
-                text: `Generated: ${date}. Based on unresolved issues as of this date (${issues.length} item${issues.length === 1 ? '' : 's'}).`,
+                text: `Prepared by: ${TSA_FROM}. The following ${issues.length} unresolved faculty welfare matter(s) are placed on the agenda. Submitter names and personal particulars are not included; each item is described so that the matter may be understood on reading alone.`,
               }),
             ],
           }),
-          ...agendaBlocks,
+          ...buildItemBlocks(issues, { groupByCategory: true }),
+          ...signOffParagraphs(),
         ],
       },
     ],
