@@ -73,6 +73,9 @@ export default function RegisterPage() {
 
     setLoading(true);
 
+    const alreadyRegisteredMessage =
+      'This email is already registered. Sign in, or use Resend confirmation on the login page.';
+
     const { data: isBlocked, error: blockCheckError } = await supabase.rpc('is_email_blocked', {
       p_email: form.email,
     });
@@ -83,6 +86,21 @@ export default function RegisterPage() {
     }
     if (isBlocked) {
       setError('This email address is not allowed to register. Contact the administrator if you believe this is a mistake.');
+      setLoading(false);
+      return;
+    }
+
+    const { data: alreadyRegistered, error: registeredCheckError } = await supabase.rpc(
+      'is_email_registered',
+      { p_email: form.email }
+    );
+    if (registeredCheckError) {
+      setError('Unable to verify email eligibility. Please try again.');
+      setLoading(false);
+      return;
+    }
+    if (alreadyRegistered) {
+      setError(alreadyRegisteredMessage);
       setLoading(false);
       return;
     }
@@ -105,7 +123,12 @@ export default function RegisterPage() {
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      const msg = signUpError.message || '';
+      if (/already|registered|exists/i.test(msg)) {
+        setError(alreadyRegisteredMessage);
+      } else {
+        setError(msg);
+      }
       setLoading(false);
       return;
     }
@@ -209,9 +232,16 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-5 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {error}
+            <div className="flex flex-col gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-5 text-sm">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+              {/already registered/i.test(error) && (
+                <Link href="/login" className="font-medium text-[#1e3a5f] hover:underline pl-6">
+                  Go to Sign In
+                </Link>
+              )}
             </div>
           )}
 

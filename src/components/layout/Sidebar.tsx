@@ -42,7 +42,7 @@ const teacherNav = [
 const adminNav = [
   { href: '/admin', label: 'Admin Overview', icon: BarChart3 },
   { href: '/admin/issues', label: 'All Issues', icon: FileText },
-  { href: '/admin/registrations', label: 'Registrations', icon: UserCheck },
+  { href: '/admin/registrations', label: 'Pending Emails', icon: UserCheck },
   { href: '/admin/reports', label: 'Reports', icon: CalendarClock },
   { href: '/admin/transparency', label: 'Transparency', icon: Megaphone },
   { href: '/admin/users', label: 'Faculty List', icon: Users },
