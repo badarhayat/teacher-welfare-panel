@@ -18,7 +18,8 @@ import type {
   PromotionSubmission,
   UserProfile,
 } from '@/types';
-import { Download, TrendingUp } from 'lucide-react';
+import { downloadPromotionReportDoc } from '@/lib/docx/promotionReport';
+import { Download, FileText, TrendingUp } from 'lucide-react';
 
 export default function AdminPromotionPage() {
   const supabase = createClient();
@@ -32,6 +33,7 @@ export default function AdminPromotionPage() {
   const [rank, setRank] = useState<PromotionRank | 'All'>('All');
   const [minServiceYears, setMinServiceYears] = useState(17);
   const [showRaw, setShowRaw] = useState(false);
+  const [exportingWord, setExportingWord] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -156,6 +158,26 @@ export default function AdminPromotionPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function downloadWord() {
+    setExportingWord(true);
+    try {
+      await downloadPromotionReportDoc({
+        vacancyRows,
+        serviceRows,
+        minServiceYears,
+        filters: {
+          dateFrom,
+          dateTo,
+          campus,
+          department,
+          rank,
+        },
+      });
+    } finally {
+      setExportingWord(false);
+    }
+  }
+
   if (!profile) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -228,6 +250,17 @@ export default function AdminPromotionPage() {
             <Button size="sm" variant="outline" onClick={downloadCsv} className="inline-flex items-center gap-1.5">
               <Download className="h-4 w-4" />
               Download report (CSV)
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={downloadWord}
+              loading={exportingWord}
+              disabled={exportingWord}
+              className="inline-flex items-center gap-1.5"
+            >
+              <FileText className="h-4 w-4" />
+              Download report (Word)
             </Button>
             <p className="self-center text-xs text-slate-500">
               {loading ? 'Loading…' : `${filtered.length} submission(s) in filter`}
