@@ -214,6 +214,14 @@ function buildPrompt(docType: 'agenda' | 'vc', issues: RewriteInputIssue[]): str
     description: i.description,
   }));
 
+  const lengthRules =
+    docType === 'agenda'
+      ? `- Each item needs: a short formal title (agenda heading) and ONE dense paragraph (two only if the source is long).
+- Preserve EVERY fact and figure from title/description: amounts, dates, percentages, seat counts, BPS/scales, departments, campuses, conditions, and pending actions. Do not invent, round, or drop numbers.
+- Be brief. Do not restate the title in the paragraph. Do not add rhetoric or filler such as "it is respectfully submitted", "kind consideration", or "early resolution" unless that is the only substance given.
+- Institutional TSA voice still; the VC must understand the matter from this paragraph alone.`
+      : `- Each item needs: a short formal title (agenda heading) and 2–4 formal paragraphs the VC can understand without other context.`;
+
   return `You are drafting official correspondence for the General Secretary, Teaching Staff Association (TSA), University of Engineering and Technology (UET) Lahore, Pakistan.
 
 Document type: ${docType === 'agenda' ? 'Meeting agenda items for the Worthy Vice Chancellor' : 'Formal brief / covering note items for the Worthy Vice Chancellor'}
@@ -224,7 +232,7 @@ Hard rules:
 - Do NOT include any personal names, emails, employee IDs, phone numbers, CNIC, or wording like "a faculty member named…", "the complainant", "the applicant submitted".
 - Do NOT invent facts. Use only the substance in title/description. If details are thin, write a clear formal request for consideration based on what is given.
 - Remove first-person teacher voice ("I request", "my salary"). Convert to institutional voice ("It is submitted that…", "TSA requests…", "Faculty have raised concern regarding…").
-- Each item needs: a short formal title (agenda heading) and 2–4 formal paragraphs the VC can understand without other context.
+${lengthRules}
 - Keep category/priority only as context for tone (urgency); do not invent campus/department.
 - In JSON string values, never use unescaped double quotes. Prefer wording without inner quotes, or use apostrophes.
 - Return valid JSON only: no markdown, no comments, no trailing commas.
@@ -235,7 +243,7 @@ Return ONLY valid JSON with this shape:
     {
       "id": "<same id as input>",
       "title": "<formal agenda title>",
-      "paragraphs": ["paragraph 1", "paragraph 2"]
+      "paragraphs": ${docType === 'agenda' ? '["one dense paragraph with all facts and figures"]' : '["paragraph 1", "paragraph 2"]'}
     }
   ]
 }
