@@ -18,8 +18,46 @@ export type RewrittenAgendaItem = {
 };
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const BATCH_SIZE = 6;
 
-function extractJsonObject(text: string): unknown {
+const RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    items: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          id: { type: 'STRING' },
+          title: { type: 'STRING' },
+          paragraphs: {
+            type: 'ARRAY',
+            items: { type: 'STRING' },
+          },
+        },
+        required: ['id', 'title', 'paragraphs'],
+      },
+    },
+  },
+  required: ['items'],
+};
+
+type GeminiItem = { id?: string; title?: string; paragraphs?: string[] };
+
+function fallbackItem(issue: RewriteInputIssue): RewrittenAgendaItem {
+  return {
+    id: issue.id,
+    title: issue.title,
+    paragraphs: [
+      `Matter for consideration: ${issue.title}.`,
+      issue.description
+        ? `Particulars: ${issue.description}`
+        : 'The Teaching Staff Association requests kind attention and appropriate directions for early resolution of this faculty welfare concern.',
+    ],
+  };
+}
+
+function sliceJsonObject(text: string): string {
   const trimmed = text.trim();
   const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const raw = fence ? fence[1].trim() : trimmed;
@@ -28,16 +66,109 @@ function extractJsonObject(text: string): unknown {
   if (start === -1 || end === -1 || end <= start) {
     throw new Error('Gemini response did not contain JSON');
   }
-  return JSON.parse(raw.slice(start, end + 1));
+  return raw.slice(start, end + 1);
 }
 
-async function callGemini(prompt: string, model: string): Promise<string> {
+/** Escape raw control characters that appear inside JSON string values. */
+function escapeControlsInStrings(json: string): string {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (const ch of json) {
+    if (!inString) {
+      if (ch === '"') inString = true;
+      out += ch;
+      continue;
+    }
+    if (escaped) {
+      out += ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\') {
+      out += ch;
+      escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = false;
+      out += ch;
+      continue;
+    }
+    if (ch === '\n') {
+      out += '\\n';
+      continue;
+    }
+    if (ch === '\r') {
+      out += '\\r';
+      continue;
+    }
+    if (ch === '\t') {
+      out += '\\t';
+      continue;
+    }
+    const code = ch.charCodeAt(0);
+    if (code < 32) {
+      out += ' ';
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+function repairJson(raw: string): string {
+  return escapeControlsInStrings(
+    raw
+      .replace(/^\uFEFF/, '')
+      .replace(/[\u201C\u201D]/g, "'")
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/,\s*([}\]])/g, '$1')
+  );
+}
+
+function extractJsonObject(text: string): unknown {
+  const sliced = sliceJsonObject(text);
+  try {
+    return JSON.parse(sliced);
+  } catch (first) {
+    try {
+      return JSON.parse(repairJson(sliced));
+    } catch {
+      const message = first instanceof Error ? first.message : '';
+      const posMatch = message.match(/position (\d+)/i);
+      const pos = posMatch ? Number(posMatch[1]) : 0;
+      console.error(
+        'Gemini JSON parse failed. Snippet:',
+        sliced.slice(Math.max(0, pos - 80), pos + 80),
+        first
+      );
+      throw first instanceof Error ? first : new Error('Gemini response was not valid JSON');
+    }
+  }
+}
+
+function itemsFromParsed(parsed: unknown): GeminiItem[] {
+  if (!parsed || typeof parsed !== 'object') return [];
+  const items = (parsed as { items?: GeminiItem[] }).items;
+  return Array.isArray(items) ? items : [];
+}
+
+async function callGemini(prompt: string, model: string, useSchema: boolean): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
     throw new Error('GEMINI_API_KEY is not configured on the server');
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const generationConfig: Record<string, unknown> = {
+    responseMimeType: 'application/json',
+    maxOutputTokens: 8192,
+  };
+  if (useSchema) {
+    generationConfig.responseSchema = RESPONSE_SCHEMA;
+  }
+
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -46,24 +177,30 @@ async function callGemini(prompt: string, model: string): Promise<string> {
     },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-      },
+      generationConfig,
     }),
   });
 
   const data = (await res.json().catch(() => ({}))) as {
     error?: { message?: string };
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    candidates?: Array<{
+      finishReason?: string;
+      content?: { parts?: Array<{ text?: string }> };
+    }>;
   };
 
   if (!res.ok) {
     throw new Error(data.error?.message || `Gemini request failed (${res.status})`);
   }
 
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+  const candidate = data.candidates?.[0];
+  const text = candidate?.content?.parts?.map((p) => p.text || '').join('') || '';
   if (!text.trim()) {
-    throw new Error('Gemini returned an empty response');
+    throw new Error(
+      candidate?.finishReason
+        ? `Gemini returned an empty response (${candidate.finishReason})`
+        : 'Gemini returned an empty response'
+    );
   }
   return text;
 }
@@ -89,6 +226,8 @@ Hard rules:
 - Remove first-person teacher voice ("I request", "my salary"). Convert to institutional voice ("It is submitted that…", "TSA requests…", "Faculty have raised concern regarding…").
 - Each item needs: a short formal title (agenda heading) and 2–4 formal paragraphs the VC can understand without other context.
 - Keep category/priority only as context for tone (urgency); do not invent campus/department.
+- In JSON string values, never use unescaped double quotes. Prefer wording without inner quotes, or use apostrophes.
+- Return valid JSON only: no markdown, no comments, no trailing commas.
 
 Return ONLY valid JSON with this shape:
 {
@@ -107,37 +246,35 @@ Input issues JSON:
 ${JSON.stringify(payload, null, 2)}`;
 }
 
-export async function rewriteIssuesWithGemini(
+async function rewriteBatch(
   issues: RewriteInputIssue[],
   docType: 'agenda' | 'vc'
 ): Promise<RewrittenAgendaItem[]> {
-  if (issues.length === 0) return [];
-
   const prompt = buildPrompt(docType, issues);
   const models = [DEFAULT_MODEL, 'gemini-3.5-flash', 'gemini-flash-latest'];
   let lastError: Error | null = null;
   let text = '';
 
   for (const model of [...new Set(models)]) {
-    try {
-      text = await callGemini(prompt, model);
-      lastError = null;
-      break;
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
+    for (const useSchema of [true, false]) {
+      try {
+        text = await callGemini(prompt, model, useSchema);
+        lastError = null;
+        break;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
     }
+    if (!lastError && text) break;
   }
 
   if (lastError || !text) {
     throw lastError || new Error('Gemini rewrite failed');
   }
 
-  const parsed = extractJsonObject(text) as {
-    items?: Array<{ id?: string; title?: string; paragraphs?: string[] }>;
-  };
-
+  const parsed = extractJsonObject(text);
   const byId = new Map(
-    (parsed.items ?? [])
+    itemsFromParsed(parsed)
       .filter((i) => i && i.id)
       .map((i) => [
         i.id as string,
@@ -158,16 +295,25 @@ export async function rewriteIssuesWithGemini(
         paragraphs: rewritten.paragraphs,
       };
     }
-    // Per-item fallback if model skipped one
-    return {
-      id: issue.id,
-      title: issue.title,
-      paragraphs: [
-        `Matter for consideration: ${issue.title}.`,
-        issue.description
-          ? `Particulars: ${issue.description}`
-          : 'The Teaching Staff Association requests kind attention and appropriate directions for early resolution of this faculty welfare concern.',
-      ],
-    };
+    return fallbackItem(issue);
   });
+}
+
+export async function rewriteIssuesWithGemini(
+  issues: RewriteInputIssue[],
+  docType: 'agenda' | 'vc'
+): Promise<RewrittenAgendaItem[]> {
+  if (issues.length === 0) return [];
+
+  const out: RewrittenAgendaItem[] = [];
+  for (let i = 0; i < issues.length; i += BATCH_SIZE) {
+    const batch = issues.slice(i, i + BATCH_SIZE);
+    try {
+      out.push(...(await rewriteBatch(batch, docType)));
+    } catch (err) {
+      console.error(`Gemini rewrite batch ${i / BATCH_SIZE + 1} failed:`, err);
+      out.push(...batch.map(fallbackItem));
+    }
+  }
+  return out;
 }

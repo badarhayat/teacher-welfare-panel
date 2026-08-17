@@ -40,8 +40,8 @@ export default function UnresolvedDocsButtons() {
   async function applyGeminiRewrite(
     issues: UnresolvedDocIssue[],
     docType: 'agenda' | 'vc'
-  ): Promise<UnresolvedDocIssue[]> {
-    if (issues.length === 0) return issues;
+  ): Promise<{ issues: UnresolvedDocIssue[]; usedAi: boolean; warning?: string }> {
+    if (issues.length === 0) return { issues, usedAi: false };
 
     const res = await fetch('/api/admin/unresolved-docs/rewrite', {
       method: 'POST',
@@ -60,21 +60,30 @@ export default function UnresolvedDocsButtons() {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(data.error || 'Gemini rewrite failed');
+      return {
+        issues,
+        usedAi: false,
+        warning: data.error
+          ? `Gemini rewrite failed (${data.error}). Downloaded using original issue wording.`
+          : 'Gemini rewrite failed. Downloaded using original issue wording.',
+      };
     }
 
     const items = (data.items ?? []) as RewrittenItem[];
     const byId = new Map(items.map((i) => [i.id, i]));
 
-    return issues.map((issue) => {
-      const rewritten = byId.get(issue.id);
-      if (!rewritten) return issue;
-      return {
-        ...issue,
-        formalTitle: rewritten.title,
-        formalParagraphs: rewritten.paragraphs,
-      };
-    });
+    return {
+      issues: issues.map((issue) => {
+        const rewritten = byId.get(issue.id);
+        if (!rewritten) return issue;
+        return {
+          ...issue,
+          formalTitle: rewritten.title,
+          formalParagraphs: rewritten.paragraphs,
+        };
+      }),
+      usedAi: Boolean(data.usedAi),
+    };
   }
 
   async function handleVc() {
@@ -83,10 +92,15 @@ export default function UnresolvedDocsButtons() {
     setInfo('Rewriting with Gemini as General Secretary / TSA…');
     try {
       const issues = await loadUnresolved();
-      const formal = await applyGeminiRewrite(issues, 'vc');
+      const { issues: formal, usedAi, warning } = await applyGeminiRewrite(issues, 'vc');
       setInfo('Building Word document…');
       await downloadVcEmailDoc(formal);
-      setInfo('VC brief downloaded (Gemini formal rewrite).');
+      setInfo(
+        warning ||
+          (usedAi
+            ? 'VC brief downloaded (Gemini formal rewrite).'
+            : 'VC brief downloaded (original wording).')
+      );
     } catch (err) {
       setInfo('');
       setError(err instanceof Error ? err.message : 'Failed to generate VC email document');
@@ -100,10 +114,15 @@ export default function UnresolvedDocsButtons() {
     setInfo('Rewriting with Gemini as General Secretary / TSA…');
     try {
       const issues = await loadUnresolved();
-      const formal = await applyGeminiRewrite(issues, 'agenda');
+      const { issues: formal, usedAi, warning } = await applyGeminiRewrite(issues, 'agenda');
       setInfo('Building Word document…');
       await downloadMeetingAgendaDoc(formal);
-      setInfo('Meeting agenda downloaded (Gemini formal rewrite).');
+      setInfo(
+        warning ||
+          (usedAi
+            ? 'Meeting agenda downloaded (Gemini formal rewrite).'
+            : 'Meeting agenda downloaded (original wording).')
+      );
     } catch (err) {
       setInfo('');
       setError(err instanceof Error ? err.message : 'Failed to generate meeting agenda');
