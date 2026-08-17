@@ -4,7 +4,7 @@ import { rewriteIssuesWithGemini } from '@/lib/ai/rewriteTsaDocs';
 
 /**
  * POST — rewrite unresolved issues as formal TSA / General Secretary text (Gemini).
- * Body: { docType: 'agenda' | 'vc', issues: [{ id, title, description, category, priority }] }
+ * Body: { docType: 'agenda' | 'vc' | 'official', issues: [{ id, title, description, category, priority }] }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     let body: {
-      docType?: 'agenda' | 'vc';
+      docType?: 'agenda' | 'vc' | 'official';
       issues?: Array<{
         id?: string;
         title?: string;
@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const docType = body.docType === 'vc' ? 'vc' : 'agenda';
+    const docType =
+      body.docType === 'vc' ? 'vc' : body.docType === 'official' ? 'official' : 'agenda';
     const issues = (body.issues ?? [])
       .filter((i) => i?.id && i?.title)
       .map((i) => ({

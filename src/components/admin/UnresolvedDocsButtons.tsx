@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, CalendarDays } from 'lucide-react';
+import { FileText, CalendarDays, ClipboardList } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ACTIVE_STATUSES } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import {
   downloadVcEmailDoc,
   downloadMeetingAgendaDoc,
+  downloadOfficialAgendaDoc,
   type UnresolvedDocIssue,
 } from '@/lib/docx/unresolvedDocs';
+import type { RewriteDocType } from '@/lib/ai/rewriteTsaDocs';
 
 type RewrittenItem = {
   id: string;
@@ -19,7 +21,7 @@ type RewrittenItem = {
 
 export default function UnresolvedDocsButtons() {
   const supabase = createClient();
-  const [loading, setLoading] = useState<'vc' | 'agenda' | null>(null);
+  const [loading, setLoading] = useState<'vc' | 'agenda' | 'official' | null>(null);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
 
@@ -39,7 +41,7 @@ export default function UnresolvedDocsButtons() {
 
   async function applyGeminiRewrite(
     issues: UnresolvedDocIssue[],
-    docType: 'agenda' | 'vc'
+    docType: RewriteDocType
   ): Promise<{ issues: UnresolvedDocIssue[]; usedAi: boolean; warning?: string }> {
     if (issues.length === 0) return { issues, usedAi: false };
 
@@ -130,12 +132,34 @@ export default function UnresolvedDocsButtons() {
     setLoading(null);
   }
 
+  async function handleOfficialAgenda() {
+    setLoading('official');
+    setError('');
+    setInfo('Rewriting official agenda with Gemini…');
+    try {
+      const issues = await loadUnresolved();
+      const { issues: formal, usedAi, warning } = await applyGeminiRewrite(issues, 'official');
+      setInfo('Building Word document…');
+      await downloadOfficialAgendaDoc(formal);
+      setInfo(
+        warning ||
+          (usedAi
+            ? 'Official agenda downloaded (Gemini, max three lines per item).'
+            : 'Official agenda downloaded (original wording).')
+      );
+    } catch (err) {
+      setInfo('');
+      setError(err instanceof Error ? err.message : 'Failed to generate official agenda');
+    }
+    setLoading(null);
+  }
+
   return (
     <div className="space-y-2">
       <p className="text-xs text-slate-500">
         Word exports are rewritten with Gemini into formal General Secretary / TSA language (no
-        submitter identity). Requires <code className="text-[11px]">GEMINI_API_KEY</code> on the
-        server.
+        submitter identity). Meeting Agenda keeps the facts; Official Agenda is at most three lines
+        per item. Requires <code className="text-[11px]">GEMINI_API_KEY</code> on the server.
       </p>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Button
@@ -159,6 +183,17 @@ export default function UnresolvedDocsButtons() {
         >
           <CalendarDays className="h-4 w-4" />
           Generate Meeting Agenda (Word)
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleOfficialAgenda}
+          loading={loading === 'official'}
+          disabled={loading !== null}
+          className="inline-flex items-center gap-1.5"
+        >
+          <ClipboardList className="h-4 w-4" />
+          Generate Official Agenda (Word)
         </Button>
       </div>
       {info && !error && <p className="text-xs text-slate-600">{info}</p>}

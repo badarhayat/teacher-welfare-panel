@@ -11,6 +11,8 @@ export type RewriteInputIssue = {
   priority: string;
 };
 
+export type RewriteDocType = 'agenda' | 'vc' | 'official';
+
 export type RewrittenAgendaItem = {
   id: string;
   title: string;
@@ -44,7 +46,24 @@ const RESPONSE_SCHEMA = {
 
 type GeminiItem = { id?: string; title?: string; paragraphs?: string[] };
 
-function fallbackItem(issue: RewriteInputIssue): RewrittenAgendaItem {
+function trimToLine(text: string, max = 220): string {
+  const cleaned = text.replace(/\s+/g, ' ').trim();
+  if (cleaned.length <= max) return cleaned;
+  const cut = cleaned.slice(0, max - 1);
+  const atSpace = cut.lastIndexOf(' ');
+  return `${(atSpace > 80 ? cut.slice(0, atSpace) : cut).trim()}…`;
+}
+
+function fallbackItem(issue: RewriteInputIssue, docType: RewriteDocType = 'agenda'): RewrittenAgendaItem {
+  if (docType === 'official') {
+    const detail = issue.description ? trimToLine(issue.description) : '';
+    return {
+      id: issue.id,
+      title: issue.title,
+      paragraphs: detail ? [detail] : [],
+    };
+  }
+
   return {
     id: issue.id,
     title: issue.title,
@@ -205,7 +224,48 @@ async function callGemini(prompt: string, model: string, useSchema: boolean): Pr
   return text;
 }
 
-function buildPrompt(docType: 'agenda' | 'vc', issues: RewriteInputIssue[]): string {
+function documentTypeLabel(docType: RewriteDocType): string {
+  if (docType === 'official') {
+    return 'Official meeting agenda (very brief table-paper items for the Worthy Vice Chancellor)';
+  }
+  if (docType === 'agenda') {
+    return 'Meeting agenda items for the Worthy Vice Chancellor';
+  }
+  return 'Formal brief / covering note items for the Worthy Vice Chancellor';
+}
+
+function lengthRules(docType: RewriteDocType): string {
+  if (docType === 'official') {
+    return `- Each item needs: a short formal title (agenda heading) and at most THREE short lines in "paragraphs" (one sentence per array item).
+- Prefer the strongest facts (amounts, dates, BPS/scales, seat counts) that fit in three lines. Do not pad to three if one or two suffice. Never exceed three.
+- Do not restate the title. No filler such as "it is respectfully submitted", "kind consideration", or "early resolution" unless that is the only substance given.
+- Institutional TSA voice still.`;
+  }
+  if (docType === 'agenda') {
+    return `- Each item needs: a short formal title (agenda heading) and ONE dense paragraph (two only if the source is long).
+- Preserve EVERY fact and figure from title/description: amounts, dates, percentages, seat counts, BPS/scales, departments, campuses, conditions, and pending actions. Do not invent, round, or drop numbers.
+- Be brief. Do not restate the title in the paragraph. Do not add rhetoric or filler such as "it is respectfully submitted", "kind consideration", or "early resolution" unless that is the only substance given.
+- Institutional TSA voice still; the VC must understand the matter from this paragraph alone.`;
+  }
+  return `- Each item needs: a short formal title (agenda heading) and 2–4 formal paragraphs the VC can understand without other context.`;
+}
+
+function paragraphsExample(docType: RewriteDocType): string {
+  if (docType === 'official') return '["line 1", "line 2"]';
+  if (docType === 'agenda') return '["one dense paragraph with all facts and figures"]';
+  return '["paragraph 1", "paragraph 2"]';
+}
+
+function normalizeParagraphs(raw: string[] | undefined, docType: RewriteDocType): string[] {
+  const lines = (raw || [])
+    .flatMap((p) => String(p).split(/\n+/))
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (docType === 'official') return lines.slice(0, 3);
+  return lines;
+}
+
+function buildPrompt(docType: RewriteDocType, issues: RewriteInputIssue[]): string {
   const payload = issues.map((i) => ({
     id: i.id,
     category: i.category,
@@ -214,17 +274,9 @@ function buildPrompt(docType: 'agenda' | 'vc', issues: RewriteInputIssue[]): str
     description: i.description,
   }));
 
-  const lengthRules =
-    docType === 'agenda'
-      ? `- Each item needs: a short formal title (agenda heading) and ONE dense paragraph (two only if the source is long).
-- Preserve EVERY fact and figure from title/description: amounts, dates, percentages, seat counts, BPS/scales, departments, campuses, conditions, and pending actions. Do not invent, round, or drop numbers.
-- Be brief. Do not restate the title in the paragraph. Do not add rhetoric or filler such as "it is respectfully submitted", "kind consideration", or "early resolution" unless that is the only substance given.
-- Institutional TSA voice still; the VC must understand the matter from this paragraph alone.`
-      : `- Each item needs: a short formal title (agenda heading) and 2–4 formal paragraphs the VC can understand without other context.`;
-
   return `You are drafting official correspondence for the General Secretary, Teaching Staff Association (TSA), University of Engineering and Technology (UET) Lahore, Pakistan.
 
-Document type: ${docType === 'agenda' ? 'Meeting agenda items for the Worthy Vice Chancellor' : 'Formal brief / covering note items for the Worthy Vice Chancellor'}
+Document type: ${documentTypeLabel(docType)}
 
 Rewrite EVERY issue into institutional language as if written by the General Secretary on behalf of TSA — NOT as quotes or submissions from individual teachers.
 
@@ -232,7 +284,7 @@ Hard rules:
 - Do NOT include any personal names, emails, employee IDs, phone numbers, CNIC, or wording like "a faculty member named…", "the complainant", "the applicant submitted".
 - Do NOT invent facts. Use only the substance in title/description. If details are thin, write a clear formal request for consideration based on what is given.
 - Remove first-person teacher voice ("I request", "my salary"). Convert to institutional voice ("It is submitted that…", "TSA requests…", "Faculty have raised concern regarding…").
-${lengthRules}
+${lengthRules(docType)}
 - Keep category/priority only as context for tone (urgency); do not invent campus/department.
 - In JSON string values, never use unescaped double quotes. Prefer wording without inner quotes, or use apostrophes.
 - Return valid JSON only: no markdown, no comments, no trailing commas.
@@ -243,7 +295,7 @@ Return ONLY valid JSON with this shape:
     {
       "id": "<same id as input>",
       "title": "<formal agenda title>",
-      "paragraphs": ${docType === 'agenda' ? '["one dense paragraph with all facts and figures"]' : '["paragraph 1", "paragraph 2"]'}
+      "paragraphs": ${paragraphsExample(docType)}
     }
   ]
 }
@@ -256,7 +308,7 @@ ${JSON.stringify(payload, null, 2)}`;
 
 async function rewriteBatch(
   issues: RewriteInputIssue[],
-  docType: 'agenda' | 'vc'
+  docType: RewriteDocType
 ): Promise<RewrittenAgendaItem[]> {
   const prompt = buildPrompt(docType, issues);
   const models = [DEFAULT_MODEL, 'gemini-3.5-flash', 'gemini-flash-latest'];
@@ -289,7 +341,7 @@ async function rewriteBatch(
         {
           id: i.id as string,
           title: (i.title || '').trim(),
-          paragraphs: (i.paragraphs || []).map((p) => String(p).trim()).filter(Boolean),
+          paragraphs: normalizeParagraphs(i.paragraphs, docType),
         } satisfies RewrittenAgendaItem,
       ])
   );
@@ -303,13 +355,13 @@ async function rewriteBatch(
         paragraphs: rewritten.paragraphs,
       };
     }
-    return fallbackItem(issue);
+    return fallbackItem(issue, docType);
   });
 }
 
 export async function rewriteIssuesWithGemini(
   issues: RewriteInputIssue[],
-  docType: 'agenda' | 'vc'
+  docType: RewriteDocType
 ): Promise<RewrittenAgendaItem[]> {
   if (issues.length === 0) return [];
 
@@ -320,7 +372,7 @@ export async function rewriteIssuesWithGemini(
       out.push(...(await rewriteBatch(batch, docType)));
     } catch (err) {
       console.error(`Gemini rewrite batch ${i / BATCH_SIZE + 1} failed:`, err);
-      out.push(...batch.map(fallbackItem));
+      out.push(...batch.map((issue) => fallbackItem(issue, docType)));
     }
   }
   return out;

@@ -71,6 +71,94 @@ function displayTitle(issue: UnresolvedDocIssue): string {
   return cleanText(issue.formalTitle) || cleanText(issue.title) || 'Faculty welfare matter';
 }
 
+function formatOfficialAgendaLines(issue: UnresolvedDocIssue): string[] {
+  const fromFormal = (issue.formalParagraphs ?? [])
+    .flatMap((p) => p.split(/\n+/))
+    .map(cleanText)
+    .filter(Boolean);
+  if (fromFormal.length > 0) return fromFormal.slice(0, 3);
+
+  const description = cleanText(issue.description);
+  if (!description) return [];
+  return [description.length > 220 ? `${description.slice(0, 217).trim()}…` : description];
+}
+
+function buildOfficialAgendaBlocks(issues: UnresolvedDocIssue[]): Paragraph[] {
+  const blocks: Paragraph[] = [];
+
+  if (issues.length === 0) {
+    blocks.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'There are presently no unresolved faculty welfare matters on the agenda.',
+            italics: true,
+          }),
+        ],
+      })
+    );
+    return blocks;
+  }
+
+  const byCategory = new Map<string, UnresolvedDocIssue[]>();
+  for (const issue of issues) {
+    const key = issue.category || 'Other';
+    const list = byCategory.get(key) ?? [];
+    list.push(issue);
+    byCategory.set(key, list);
+  }
+
+  let sectionNo = 1;
+  for (const [category, items] of byCategory) {
+    blocks.push(
+      new Paragraph({
+        spacing: { before: 240, after: 80 },
+        children: [new TextRun({ text: `${sectionNo}. ${category}`, bold: true, size: 24 })],
+      })
+    );
+    items.forEach((issue, idx) => {
+      blocks.push(
+        new Paragraph({
+          spacing: { before: 100, after: 40 },
+          children: [
+            new TextRun({
+              text: `${sectionNo}.${idx + 1}  ${displayTitle(issue)}`,
+              bold: true,
+              size: 22,
+            }),
+          ],
+        }),
+        ...formatOfficialAgendaLines(issue).map(
+          (text) =>
+            new Paragraph({
+              spacing: { after: 40 },
+              children: [new TextRun({ text, size: 20 })],
+            })
+        )
+      );
+    });
+    sectionNo += 1;
+  }
+
+  blocks.push(
+    new Paragraph({
+      spacing: { before: 240 },
+      children: [new TextRun({ text: `${sectionNo}. Any other business`, bold: true, size: 24 })],
+    }),
+    new Paragraph({
+      spacing: { after: 80 },
+      children: [
+        new TextRun({
+          text: 'Any additional faculty welfare matters that may arise with the permission of the chair.',
+          size: 20,
+        }),
+      ],
+    })
+  );
+
+  return blocks;
+}
+
 function signOffParagraphs(): Paragraph[] {
   return [
     new Paragraph({
@@ -337,4 +425,57 @@ export async function downloadMeetingAgendaDoc(issues: UnresolvedDocIssue[]) {
   const blob = await Packer.toBlob(doc);
   const stamp = new Date().toISOString().slice(0, 10);
   downloadBlob(blob, `Meeting-Agenda-Unresolved-Issues-${stamp}.docx`);
+}
+
+export async function downloadOfficialAgendaDoc(issues: UnresolvedDocIssue[]) {
+  const date = todayLabel();
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: 'Official Agenda — Faculty Welfare Issues Meeting', bold: true }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: 'Teaching Staff Association (TSA), UET Lahore', bold: true }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 160 },
+            children: [
+              new TextRun({
+                text: 'Prepared for the Worthy Vice Chancellor',
+                italics: true,
+              }),
+            ],
+          }),
+          new Paragraph({
+            spacing: { after: 60 },
+            children: [new TextRun({ text: `Meeting / document date: ${date}` })],
+          }),
+          new Paragraph({
+            spacing: { after: 160 },
+            children: [
+              new TextRun({
+                text: `Prepared by: ${TSA_FROM}. ${issues.length} unresolved faculty welfare matter(s).`,
+              }),
+            ],
+          }),
+          ...buildOfficialAgendaBlocks(issues),
+          ...signOffParagraphs(),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadBlob(blob, `Official-Agenda-Unresolved-Issues-${stamp}.docx`);
 }
